@@ -1,0 +1,17 @@
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.csproj.AssemblyReference.cache
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.AssemblyInfoInputs.cache
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.AssemblyInfo.cs
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.csproj.CoreCompileInputs.cache
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Application.deps.json
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Application.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Application.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Calculation.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Domain.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\bin\Debug\net10.0\KhmerAstrology.Calculation.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAst.CA711525.Up2Date
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\refint\KhmerAstrology.Application.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\ref\KhmerAstrology.Application.dll

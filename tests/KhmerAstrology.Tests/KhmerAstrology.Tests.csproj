@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KhmerAstrology.Domain\KhmerAstrology.Domain.csproj" />
+    <ProjectReference Include="..\..\src\KhmerAstrology.Calculation\KhmerAstrology.Calculation.csproj" />
+    <ProjectReference Include="..\..\src\KhmerAstrology.Application\KhmerAstrology.Application.csproj" />
+    <ProjectReference Include="..\..\src\KhmerAstrology.Infrastructure\KhmerAstrology.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\modern-planetary-coefficients.json.gz"
+          Link="Data\modern-planetary-coefficients.json.gz"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\zodiac-signs.json"
+          Link="Data\zodiac-signs.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\nakshatras.json"
+          Link="Data\nakshatras.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\cambodia-locations.json"
+          Link="Data\cambodia-locations.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\interpretations.json"
+          Link="Data\interpretations.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\traditional-outer-points.json"
+          Link="Data\traditional-outer-points.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\khmer-calendar-month-codes.json.gz"
+          Link="Data\khmer-calendar-month-codes.json.gz"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

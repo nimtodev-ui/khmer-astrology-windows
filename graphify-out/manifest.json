@@ -1,0 +1,50 @@
+{
+  "KhmerAstrology.sln": {
+    "mtime": 1789877568.959268,
+    "seen": 1789877819.5559437,
+    "ast_hash": "6ea0b99f0850d3d593996921c4868f4a",
+    "semantic_hash": "6ea0b99f0850d3d593996921c4868f4a"
+  },
+  "KhmerAstrology/Form1.Designer.cs": {
+    "mtime": 1789877594.559,
+    "seen": 1789877819.5559437,
+    "ast_hash": "7f8ddc6cc2f8b9abf7bbc94923473827",
+    "semantic_hash": "7f8ddc6cc2f8b9abf7bbc94923473827"
+  },
+  "KhmerAstrology/Form1.cs": {
+    "mtime": 1789877594.547,
+    "seen": 1789877819.5559437,
+    "ast_hash": "75aa1379bd8609c331cee456bbdf9ff9",
+    "semantic_hash": "75aa1379bd8609c331cee456bbdf9ff9"
+  },
+  "KhmerAstrology/KhmerAstrology.csproj": {
+    "mtime": 1789877567.307,
+    "seen": 1789877819.5559437,
+    "ast_hash": "097e3d3b354fde0723ff10da21fae498",
+    "semantic_hash": "097e3d3b354fde0723ff10da21fae498"
+  },
+  "KhmerAstrology/Program.cs": {
+    "mtime": 1789877594.565,
+    "seen": 1789877819.5559437,
+    "ast_hash": "cca55af43f69e48fd5000c962ef9868e",
+    "semantic_hash": "cca55af43f69e48fd5000c962ef9868e"
+  },
+  "KhmerAstrology/obj/Debug/net10.0-windows/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs": {
+    "mtime": 1789877597.0566378,
+    "seen": 1789877819.5559437,
+    "ast_hash": "8479efdf06e2d26e053d27ffa6964185",
+    "semantic_hash": "8479efdf06e2d26e053d27ffa6964185"
+  },
+  "KhmerAstrology/obj/Debug/net10.0-windows/KhmerAstrology.AssemblyInfo.cs": {
+    "mtime": 1789877597.1581607,
+    "seen": 1789877819.5559437,
+    "ast_hash": "743d13f286452bfd524a0212fcaec072",
+    "semantic_hash": "743d13f286452bfd524a0212fcaec072"
+  },
+  "KhmerAstrology/obj/Debug/net10.0-windows/KhmerAstrology.GlobalUsings.g.cs": {
+    "mtime": 1789877596.9141185,
+    "seen": 1789877819.5559437,
+    "ast_hash": "197595243b8c7777128c3ea17e98ffd3",
+    "semantic_hash": "197595243b8c7777128c3ea17e98ffd3"
+  }
+}

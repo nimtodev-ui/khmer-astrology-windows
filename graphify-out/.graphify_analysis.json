@@ -1,0 +1,83 @@
+{
+  "communities": {
+    "0": [
+      "form",
+      "icontainer",
+      "khmerastrology_form1_designer_khmerastrology_form1",
+      "khmerastrology_form1_designer_khmerastrology_form1_dispose",
+      "khmerastrology_form1_designer_khmerastrology_form1_initializecomponent"
+    ],
+    "1": [
+      "framework_net10_0_windows",
+      "khmerastrology",
+      "khmerastrology_khmerastrology",
+      "sdk_microsoft_net_sdk"
+    ],
+    "2": [
+      "khmerastrology_program",
+      "khmerastrology_program_khmerastrology_program",
+      "khmerastrology_program_khmerastrology_program_main",
+      "stathread"
+    ],
+    "3": [
+      "csharp_namespace:0dbece174e918d04",
+      "khmerastrology_form1",
+      "khmerastrology_form1_designer"
+    ],
+    "4": [
+      "khmerastrology_obj_debug_net10_0_windows_khmerastrology_assemblyinfo"
+    ],
+    "5": [
+      "khmerastrology_obj_debug_net10_0_windows_khmerastrology_globalusings_g"
+    ],
+    "6": [
+      "khmerastrology_obj_debug_net10_0_windows_netcoreapp_version_v10_0_assemblyattributes"
+    ]
+  },
+  "cohesion": {
+    "0": 0.4,
+    "1": 0.5,
+    "2": 0.5,
+    "3": 0.6666666666666666,
+    "4": 1.0,
+    "5": 1.0,
+    "6": 1.0
+  },
+  "gods": [
+    {
+      "id": "khmerastrology_form1_designer_khmerastrology_form1",
+      "label": "Form1",
+      "degree": 6
+    },
+    {
+      "id": "khmerastrology_khmerastrology",
+      "label": "KhmerAstrology",
+      "degree": 3
+    },
+    {
+      "id": "csharp_namespace:0dbece174e918d04",
+      "label": "KhmerAstrology",
+      "degree": 3
+    },
+    {
+      "id": "khmerastrology_program_khmerastrology_program",
+      "label": "Program",
+      "degree": 2
+    },
+    {
+      "id": "framework_net10_0_windows",
+      "label": "net10.0-windows",
+      "degree": 1
+    },
+    {
+      "id": "sdk_microsoft_net_sdk",
+      "label": "Microsoft.NET.Sdk",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

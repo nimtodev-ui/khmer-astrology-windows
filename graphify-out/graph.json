@@ -1,0 +1,418 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "khmerastrology_form1_designer_khmerastrology_form1",
+      "label": "Form1",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "metadata": {
+        "is_partial": true,
+        "namespace": "KhmerAstrology",
+        "scope_chain": [
+          "s3"
+        ]
+      },
+      "norm_label": "form1",
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L3"
+    },
+    {
+      "id": "khmerastrology_program_khmerastrology_program",
+      "label": "Program",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "metadata": {
+        "namespace": "KhmerAstrology",
+        "scope_chain": [
+          "s0"
+        ]
+      },
+      "norm_label": "program",
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L3"
+    },
+    {
+      "id": "khmerastrology_form1_designer_khmerastrology_form1_dispose",
+      "label": ".Dispose()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "metadata": {
+        "namespace": "KhmerAstrology",
+        "scope_chain": [
+          "s3"
+        ]
+      },
+      "norm_label": ".dispose()",
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L14"
+    },
+    {
+      "id": "khmerastrology_form1_designer_khmerastrology_form1_initializecomponent",
+      "label": ".InitializeComponent()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "metadata": {
+        "namespace": "KhmerAstrology",
+        "scope_chain": [
+          "s3"
+        ]
+      },
+      "norm_label": ".initializecomponent()",
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L30"
+    },
+    {
+      "id": "khmerastrology_program_khmerastrology_program_main",
+      "label": ".Main()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "metadata": {
+        "namespace": "KhmerAstrology",
+        "scope_chain": [
+          "s0"
+        ]
+      },
+      "norm_label": ".main()",
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L8"
+    },
+    {
+      "id": "form",
+      "label": "Form",
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "form",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "icontainer",
+      "label": "IContainer",
+      "_origin": "ast",
+      "community": 0,
+      "file_type": "code",
+      "norm_label": "icontainer",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "khmerastrology",
+      "label": "KhmerAstrology.sln",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "khmerastrology.sln",
+      "source_file": "KhmerAstrology.sln",
+      "source_location": null
+    },
+    {
+      "id": "khmerastrology_khmerastrology",
+      "label": "KhmerAstrology",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "code",
+      "norm_label": "khmerastrology",
+      "source_file": "KhmerAstrology/KhmerAstrology.csproj",
+      "source_location": null
+    },
+    {
+      "id": "framework_net10_0_windows",
+      "label": "net10.0-windows",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "net10.0-windows",
+      "source_file": "KhmerAstrology/KhmerAstrology.csproj",
+      "source_location": null
+    },
+    {
+      "id": "sdk_microsoft_net_sdk",
+      "label": "Microsoft.NET.Sdk",
+      "_origin": "ast",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "microsoft.net.sdk",
+      "source_file": "KhmerAstrology/KhmerAstrology.csproj",
+      "source_location": null
+    },
+    {
+      "id": "khmerastrology_program",
+      "label": "Program.cs",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "program.cs",
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L1"
+    },
+    {
+      "id": "stathread",
+      "label": "STAThread",
+      "_origin": "ast",
+      "community": 2,
+      "file_type": "code",
+      "norm_label": "stathread",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "csharp_namespace:0dbece174e918d04",
+      "label": "KhmerAstrology",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "metadata": {
+        "kind": "csharp_namespace",
+        "namespace": "KhmerAstrology"
+      },
+      "norm_label": "khmerastrology",
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L1",
+      "type": "namespace"
+    },
+    {
+      "id": "khmerastrology_form1",
+      "label": "Form1.cs",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "form1.cs",
+      "source_file": "KhmerAstrology/Form1.cs",
+      "source_location": "L1"
+    },
+    {
+      "id": "khmerastrology_form1_designer",
+      "label": "Form1.Designer.cs",
+      "_origin": "ast",
+      "community": 3,
+      "file_type": "code",
+      "norm_label": "form1.designer.cs",
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L1"
+    },
+    {
+      "id": "khmerastrology_obj_debug_net10_0_windows_khmerastrology_assemblyinfo",
+      "label": "KhmerAstrology.AssemblyInfo.cs",
+      "_origin": "ast",
+      "community": 4,
+      "file_type": "code",
+      "norm_label": "khmerastrology.assemblyinfo.cs",
+      "source_file": "KhmerAstrology/obj/Debug/net10.0-windows/KhmerAstrology.AssemblyInfo.cs",
+      "source_location": "L1"
+    },
+    {
+      "id": "khmerastrology_obj_debug_net10_0_windows_khmerastrology_globalusings_g",
+      "label": "KhmerAstrology.GlobalUsings.g.cs",
+      "_origin": "ast",
+      "community": 5,
+      "file_type": "code",
+      "norm_label": "khmerastrology.globalusings.g.cs",
+      "source_file": "KhmerAstrology/obj/Debug/net10.0-windows/KhmerAstrology.GlobalUsings.g.cs",
+      "source_location": "L1"
+    },
+    {
+      "id": "khmerastrology_obj_debug_net10_0_windows_netcoreapp_version_v10_0_assemblyattributes",
+      "label": ".NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "_origin": "ast",
+      "community": 6,
+      "file_type": "code",
+      "norm_label": ".netcoreapp,version=v10.0.assemblyattributes.cs",
+      "source_file": "KhmerAstrology/obj/Debug/net10.0-windows/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "source_location": "L1"
+    }
+  ],
+  "links": [
+    {
+      "source": "khmerastrology_program_khmerastrology_program_main",
+      "target": "stathread",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "attribute",
+      "metadata": {
+        "ref_token": "STAThread"
+      },
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer_khmerastrology_form1",
+      "target": "icontainer",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "metadata": {
+        "ref_token": "IContainer",
+        "qualified": true,
+        "ref_qualifier": "System.ComponentModel"
+      },
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer_khmerastrology_form1",
+      "target": "form",
+      "relation": "inherits",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "metadata": {
+        "ref_token": "Form"
+      },
+      "source_file": "KhmerAstrology/Form1.cs",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology",
+      "target": "khmerastrology_khmerastrology",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology.sln",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1",
+      "target": "csharp_namespace:0dbece174e918d04",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.cs",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1",
+      "target": "khmerastrology_form1_designer_khmerastrology_form1",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.cs",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer",
+      "target": "csharp_namespace:0dbece174e918d04",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer",
+      "target": "khmerastrology_form1_designer_khmerastrology_form1",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_program",
+      "target": "csharp_namespace:0dbece174e918d04",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_program",
+      "target": "khmerastrology_program_khmerastrology_program",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer_khmerastrology_form1",
+      "target": "khmerastrology_form1_designer_khmerastrology_form1_dispose",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_form1_designer_khmerastrology_form1",
+      "target": "khmerastrology_form1_designer_khmerastrology_form1_initializecomponent",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Form1.Designer.cs",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_program_khmerastrology_program",
+      "target": "khmerastrology_program_khmerastrology_program_main",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/Program.cs",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_khmerastrology",
+      "target": "framework_net10_0_windows",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/KhmerAstrology.csproj",
+      "weight": 1.0
+    },
+    {
+      "source": "khmerastrology_khmerastrology",
+      "target": "sdk_microsoft_net_sdk",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "KhmerAstrology/KhmerAstrology.csproj",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

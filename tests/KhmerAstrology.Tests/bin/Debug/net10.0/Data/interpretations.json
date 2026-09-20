@@ -1,0 +1,18 @@
+{
+  "status": "workbook-backed",
+  "sourceSheet": "ទិន្នន័យព្យាករ",
+  "rules": [
+    { "houseNumber": 1, "nameKm": "តនុ", "descriptionKm": "អត្តសញ្ញាណ រូបរាងកាយ និងព្រលឹង វិញ្ញាណ", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 2, "nameKm": "កដុម្ពៈ", "descriptionKm": "ទ្រព្យសម្បត្តិ និងក្រុមគ្រួសារ", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 3, "nameKm": "សហជៈ", "descriptionKm": "ភាពក្លាហាន និងញាតិបងប្អូន", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 4, "nameKm": "ពន្ធុ", "descriptionKm": "មាតា ទីលំនៅ និងសេចក្តីសុខ", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 5, "nameKm": "បុត្តៈ", "descriptionKm": "បញ្ញាស្មារតី និងកូនចៅ", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 6, "nameKm": "អរិ", "descriptionKm": "ឧបសគ្គ ជំងឺ និងសត្រូវ", "source": "គម្ពីរសូរ្យយាត្រវ្យាខ្យាន" },
+    { "houseNumber": 7, "nameKm": "បតនី", "descriptionKm": "គូស្រករ និងដៃគូសហការ", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" },
+    { "houseNumber": 8, "nameKm": "មរណៈ", "descriptionKm": "អាយុកាល និងការផ្លាស់ប្តូរទម្រង់", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" },
+    { "houseNumber": 9, "nameKm": "សុភៈ", "descriptionKm": "គុណធម៌ សាសនា និងសិរីសួស្តី", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" },
+    { "houseNumber": 10, "nameKm": "កម្មៈ", "descriptionKm": "កេរ្តិ៍ឈ្មោះ និងកិច្ចការងារប្រចាំជីវិត", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" },
+    { "houseNumber": 11, "nameKm": "លាភៈ", "descriptionKm": "ប្រាក់ចំណូល និងសេចក្តីសម្រេចផល", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" },
+    { "houseNumber": 12, "nameKm": "វិនាសនៈ", "descriptionKm": "ការបាត់បង់ ការរំដោះខ្លួន និងអាថ៌កំបាំង", "source": "គម្ពីរសូរ្យយាត្រវ្យាន" }
+  ]
+}

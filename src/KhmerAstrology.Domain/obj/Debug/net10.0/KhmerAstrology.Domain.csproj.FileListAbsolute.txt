@@ -1,0 +1,11 @@
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\bin\Debug\net10.0\KhmerAstrology.Domain.deps.json
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\bin\Debug\net10.0\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\bin\Debug\net10.0\KhmerAstrology.Domain.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.AssemblyInfoInputs.cache
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.AssemblyInfo.cs
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.csproj.CoreCompileInputs.cache
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\refint\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.pdb
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\ref\KhmerAstrology.Domain.dll
