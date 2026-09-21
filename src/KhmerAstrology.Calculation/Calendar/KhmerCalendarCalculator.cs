@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using KhmerAstrology.Calculation.Interfaces;
 using KhmerAstrology.Domain.Interfaces;
 using KhmerAstrology.Domain.Models;
@@ -10,6 +12,49 @@ namespace KhmerAstrology.Calculation.Calendar;
 /// </summary>
 public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
 {
+    /// <summary>
+    /// Parses a CE or BCE year from an input string.
+    /// Handles Arabic digits (e.g. 2026, -500), Khmer numerals (e.g. ២០២៦, -៥០០),
+    /// Unicode minus/dashes (e.g. −500, –500), and textual tags (e.g. 500 មុន គ.ស., 2026 គ.ស.).
+    /// </summary>
+    public static bool TryParseYear(string? raw, out int year)
+    {
+        year = 0;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        var text = raw.Trim();
+        text = text.Replace('−', '-').Replace('–', '-').Replace('—', '-');
+        var isNegative = text.Contains("មុន", StringComparison.OrdinalIgnoreCase) || text.Contains('-');
+
+        var sb = new StringBuilder();
+        foreach (var ch in text)
+        {
+            if (ch is >= '០' and <= '៩')
+            {
+                sb.Append((char)('0' + (ch - '០')));
+            }
+            else if (char.IsDigit(ch))
+            {
+                sb.Append(ch);
+            }
+        }
+
+        if (sb.Length == 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(sb.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var absYear) || absYear == 0)
+        {
+            return false;
+        }
+
+        year = isNegative ? -absYear : absYear;
+        return true;
+    }
     private static readonly string[] LunarMonthNames =
     [
         "Migasira", "Phussa", "Magha", "Phalguna", "Citta", "Visakha", "Jettha",
@@ -110,10 +155,11 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
         var boriTithi = (int)Mod(aharganaDay + Math.Floor((aharganaDay * 11D + 650D) / 692D), 30D);
         var newEraDay = (int)Mod(aharganaDay, 7D);
 
-        // Workbook B38/B41/B42/B45 are the uncorrected value. B39/B43/B44/B46
-        // apply the workbook's 2.165-day correction.
-        var mahaSankranta = CalculateSankranta(astronomicalYear, 0D);
-        var nextMahaSankranta = CalculateSankranta(astronomicalYear, 2.165D);
+        // In workbook អដ្ឋភុជ្ជ:
+        // - B38/B41/B42/B45 (correction = 0) is ឡើងស័ក (Rise of Sak / New Era epoch).
+        // - B39/B43/B44/B46 (correction = 2.165 days) is មហាសង្ក្រាន្ត (Maha Sankranta).
+        var riseOfSak = CalculateSankranta(astronomicalYear, 0D);
+        var mahaSankranta = CalculateSankranta(astronomicalYear, 2.165D);
         var yearType = kammaja is >= 1 and <= 207
             ? "Leap Year"
             : kammaja is >= 208 and <= 800
@@ -140,12 +186,27 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
             Masakendra = masakendra,
             BoriTithi = boriTithi,
             NewEraDay = newEraDay,
-            NewEraWeekday = Weekdays[mahaSankranta.WeekdayNumber - 1],
+            NewEraWeekday = Weekdays[riseOfSak.WeekdayNumber - 1],
+
+            // Maha Sankranta (មហាសង្ក្រាន្ត) — Excel B31, B32, B39, B43, B44, B46
             MahaSankrantaDay = mahaSankranta.Day,
+            MahaSankrantaMonth = mahaSankranta.Month,
             MahaSankrantaTime = mahaSankranta.Time,
-            NextMahaSankrantaDay = nextMahaSankranta.Day,
-            NextMahaSankrantaTime = nextMahaSankranta.Time,
-            NextMahaSankrantaWeekday = Weekdays[nextMahaSankranta.WeekdayNumber - 1],
+            MahaSankrantaWeekday = Weekdays[mahaSankranta.WeekdayNumber - 1],
+            MahaSankrantaWeekdayNumber = mahaSankranta.WeekdayNumber,
+
+            // Rise of Sak (ឡើងស័ក) — Excel B30, F7, B38, B41, B42, B45
+            RiseOfSakDay = riseOfSak.Day,
+            RiseOfSakMonth = riseOfSak.Month,
+            RiseOfSakTime = riseOfSak.Time,
+            RiseOfSakWeekday = Weekdays[riseOfSak.WeekdayNumber - 1],
+            RiseOfSakWeekdayNumber = riseOfSak.WeekdayNumber,
+
+            // Backward-compatible properties
+            NextMahaSankrantaDay = riseOfSak.Day,
+            NextMahaSankrantaTime = riseOfSak.Time,
+            NextMahaSankrantaWeekday = Weekdays[riseOfSak.WeekdayNumber - 1],
+
             YearType = yearType,
             DaysInYear = daysInYear,
             LunarYearType = lunarYearType,
@@ -286,12 +347,31 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
             + (2D - Math.Floor(year / 100D) + Math.Floor(Math.Floor(year / 100D) / 4D))
             - 1_524.5D;
 
-        var day = (int)(Math.Floor(correctedJulianDay - referenceJulianDay) + 1D);
+        var rawDay = (int)(Math.Floor(correctedJulianDay - referenceJulianDay) + 1D);
         var seconds = (int)Mod(
-            Math.Round(Mod(correctedJulianDay - referenceJulianDay, 1D) * 86_400D, MidpointRounding.ToEven),
+            Math.Round(Mod(correctedJulianDay - referenceJulianDay, 1D) * 86_400D, MidpointRounding.AwayFromZero),
             86_400D);
         var weekdayNumber = (int)Mod(Math.Floor(correctedJulianDay + 0.5D) + 1D, 7D) + 1;
-        return new SankrantaValue(day, TimeSpan.FromSeconds(seconds), correctedJulianDay, weekdayNumber);
+
+        int month;
+        int day;
+        if (rawDay <= 0)
+        {
+            month = 3;
+            day = rawDay + 31;
+        }
+        else if (rawDay <= 30)
+        {
+            month = 4;
+            day = rawDay;
+        }
+        else
+        {
+            month = 5;
+            day = rawDay - 30;
+        }
+
+        return new SankrantaValue(rawDay, day, month, TimeSpan.FromSeconds(seconds), correctedJulianDay, weekdayNumber);
     }
 
     private static bool IsWholeNumber(double value) => Math.Abs(value - Math.Round(value)) < 1E-12;
@@ -300,5 +380,5 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
 
     private static double Mod(double value, double divisor) => ((value % divisor) + divisor) % divisor;
 
-    private readonly record struct SankrantaValue(int Day, TimeSpan Time, double JulianDay, int WeekdayNumber);
+    private readonly record struct SankrantaValue(int RawDay, int Day, int Month, TimeSpan Time, double JulianDay, int WeekdayNumber);
 }

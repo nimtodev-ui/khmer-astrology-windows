@@ -9,3 +9,7 @@ D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\Khme
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\refint\KhmerAstrology.Domain.dll
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.pdb
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\ref\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Domain\obj\Debug\net10.0\KhmerAstrology.Domain.sourcelink.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Domain.deps.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Domain.dll
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Domain.pdb

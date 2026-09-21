@@ -112,3 +112,5 @@ D:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\bin\Debug\net10.0\Khm
 D:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\bin\Debug\net10.0\KhmerAstrology.Infrastructure.pdb
 D:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\bin\Debug\net10.0\Data\traditional-outer-points.json
 D:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\bin\Debug\net10.0\Data\khmer-calendar-month-codes.json.gz
+D:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\obj\Debug\net10.0\KhmerAstrology.Tests.sourcelink.json
+d:\RiderProjects\KhmerAstrology\tests\KhmerAstrology.Tests\bin\Debug\net10.0\Data\khmer-calendar-year-codes.txt.gz

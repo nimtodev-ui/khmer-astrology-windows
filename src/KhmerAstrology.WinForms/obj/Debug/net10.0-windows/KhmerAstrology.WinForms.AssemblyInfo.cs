@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KhmerAstrology.WinForms")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ab4b44038766249fd302c98cbadbfd77bd731b3b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+963ab22e470a8ca290be83bd7c63960fd7e01019")]
 [assembly: System.Reflection.AssemblyProductAttribute("KhmerAstrology.WinForms")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KhmerAstrology.WinForms")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -13,3 +13,7 @@ D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Calculation\obj\Debug\net10.0
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Calculation\obj\Debug\net10.0\refint\KhmerAstrology.Calculation.dll
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Calculation\obj\Debug\net10.0\KhmerAstrology.Calculation.pdb
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Calculation\obj\Debug\net10.0\ref\KhmerAstrology.Calculation.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Calculation\obj\Debug\net10.0\KhmerAstrology.Calculation.sourcelink.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Calculation.deps.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Calculation.dll
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Calculation.pdb

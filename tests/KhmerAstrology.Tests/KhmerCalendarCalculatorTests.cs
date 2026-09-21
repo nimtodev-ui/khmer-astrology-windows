@@ -35,11 +35,56 @@ public sealed class KhmerCalendarCalculatorTests
         Assert.Equal("12-Month Lunar Year", result.LunarYearType);
         Assert.Equal(6, result.NewEraDay);
         Assert.Equal("Thursday", result.NewEraWeekday);
-        Assert.Equal(16, result.MahaSankrantaDay);
-        Assert.Equal(TimeSpan.FromSeconds(52_812), result.MahaSankrantaTime);
-        Assert.Equal(14, result.NextMahaSankrantaDay);
-        Assert.Equal(TimeSpan.FromSeconds(38_556), result.NextMahaSankrantaTime);
-        Assert.Equal("Tuesday", result.NextMahaSankrantaWeekday);
+        Assert.Equal(14, result.MahaSankrantaDay);
+        Assert.Equal(4, result.MahaSankrantaMonth);
+        Assert.Equal(TimeSpan.FromSeconds(38_556), result.MahaSankrantaTime);
+        Assert.Equal("Tuesday", result.MahaSankrantaWeekday);
+        Assert.Equal(16, result.RiseOfSakDay);
+        Assert.Equal(4, result.RiseOfSakMonth);
+        Assert.Equal(TimeSpan.FromSeconds(52_812), result.RiseOfSakTime);
+        Assert.Equal("Thursday", result.RiseOfSakWeekday);
+        Assert.Equal(16, result.NextMahaSankrantaDay);
+        Assert.Equal(TimeSpan.FromSeconds(52_812), result.NextMahaSankrantaTime);
+        Assert.Equal("Thursday", result.NextMahaSankrantaWeekday);
+    }
+
+    [Fact]
+    public void Calendar_MatchesWorkbook2027AtthabhujjSample()
+    {
+        var result = _calculator.CalculateForYear(2027, 21, 8, TimeOnly.MinValue);
+
+        Assert.Equal(2027, result.AstronomicalYear);
+        Assert.Equal(1389, result.KhmerYear);
+        Assert.Equal(14, result.MahaSankrantaDay);
+        Assert.Equal(4, result.MahaSankrantaMonth);
+        Assert.Equal(TimeSpan.FromSeconds(60_912), result.MahaSankrantaTime);
+        Assert.Equal("Wednesday", result.MahaSankrantaWeekday);
+        Assert.Equal(16, result.RiseOfSakDay);
+        Assert.Equal(4, result.RiseOfSakMonth);
+        Assert.Equal(TimeSpan.FromSeconds(75_168), result.RiseOfSakTime);
+        Assert.Equal("Friday", result.RiseOfSakWeekday);
+    }
+
+    [Theory]
+    [InlineData(2024, 13, 22, 17, 24, "Saturday", 16, 2, 15, 0, "Tuesday")]
+    [InlineData(2025, 14, 4, 30, 0, "Monday", 16, 8, 27, 36, "Wednesday")]
+    [InlineData(2026, 14, 10, 42, 36, "Tuesday", 16, 14, 40, 12, "Thursday")]
+    [InlineData(2027, 14, 16, 55, 12, "Wednesday", 16, 20, 52, 48, "Friday")]
+    [InlineData(2028, 13, 23, 7, 48, "Thursday", 16, 3, 5, 24, "Sunday")]
+    public void Calendar_SankrantaAndRiseOfSak_MatchOfficialKhmerAlmanacAcrossYears(
+        int year,
+        int sanDay, int sanH, int sanM, int sanS, string sanWeekday,
+        int sakDay, int sakH, int sakM, int sakS, string sakWeekday)
+    {
+        var result = _calculator.CalculateForYear(year, 1, 1, TimeOnly.MinValue);
+
+        Assert.Equal(sanDay, result.MahaSankrantaDay);
+        Assert.Equal(new TimeSpan(sanH, sanM, sanS), result.MahaSankrantaTime);
+        Assert.Equal(sanWeekday, result.MahaSankrantaWeekday);
+
+        Assert.Equal(sakDay, result.RiseOfSakDay);
+        Assert.Equal(new TimeSpan(sakH, sakM, sakS), result.RiseOfSakTime);
+        Assert.Equal(sakWeekday, result.RiseOfSakWeekday);
     }
 
     [Fact]
@@ -123,5 +168,33 @@ public sealed class KhmerCalendarCalculatorTests
 
         Assert.Equal(2567, dayBeforeBoundary.BuddhistYear);
         Assert.Equal(2568, boundaryDay.BuddhistYear);
+    }
+
+    [Theory]
+    [InlineData("2026", true, 2026)]
+    [InlineData("  2027  ", true, 2027)]
+    [InlineData("+2026", true, 2026)]
+    [InlineData("២០២៦", true, 2026)]
+    [InlineData("២០២៧", true, 2027)]
+    [InlineData("-500", true, -500)]
+    [InlineData("−500", true, -500)] // Unicode minus U+2212
+    [InlineData("–500", true, -500)] // En-dash U+2013
+    [InlineData("—500", true, -500)] // Em-dash U+2014
+    [InlineData("-៥០០", true, -500)]
+    [InlineData("500 មុន គ.ស.", true, -500)]
+    [InlineData("២០២៦ គ.ស.", true, 2026)]
+    [InlineData("0", false, 0)]
+    [InlineData("០", false, 0)]
+    [InlineData("", false, 0)]
+    [InlineData("   ", false, 0)]
+    [InlineData("invalid", false, 0)]
+    public void TryParseYear_ParsesVariousFormats(string input, bool expectedSuccess, int expectedYear)
+    {
+        var success = KhmerCalendarCalculator.TryParseYear(input, out var year);
+        Assert.Equal(expectedSuccess, success);
+        if (expectedSuccess)
+        {
+            Assert.Equal(expectedYear, year);
+        }
     }
 }

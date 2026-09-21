@@ -16,8 +16,22 @@ public sealed record KhmerCalendarResult
     public int BoriTithi { get; init; }
     public int NewEraDay { get; init; }
     public string NewEraWeekday { get; init; } = string.Empty;
+
+    // Maha Sankranta (មហាសង្ក្រាន្ត) — Excel cells B31, B32, B39, B43, B44, B46
     public int MahaSankrantaDay { get; init; }
+    public int MahaSankrantaMonth { get; init; } = 4;
     public TimeSpan MahaSankrantaTime { get; init; }
+    public string MahaSankrantaWeekday { get; init; } = string.Empty;
+    public int MahaSankrantaWeekdayNumber { get; init; }
+
+    // Rise of Sak (ឡើងស័ក) — Excel cells B30, F7, B38, B41, B42, B45
+    public int RiseOfSakDay { get; init; }
+    public int RiseOfSakMonth { get; init; } = 4;
+    public TimeSpan RiseOfSakTime { get; init; }
+    public string RiseOfSakWeekday { get; init; } = string.Empty;
+    public int RiseOfSakWeekdayNumber { get; init; }
+
+    // Backward-compatible properties matching former schema
     public int NextMahaSankrantaDay { get; init; }
     public TimeSpan NextMahaSankrantaTime { get; init; }
     public string NextMahaSankrantaWeekday { get; init; } = string.Empty;

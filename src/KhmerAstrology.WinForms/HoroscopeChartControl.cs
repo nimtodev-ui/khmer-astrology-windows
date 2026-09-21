@@ -14,6 +14,7 @@ namespace KhmerAstrology.WinForms;
 public sealed class HoroscopeChartControl : UserControl
 {
     private AstrologyChart? _chart;
+    private bool _isKhmer;
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public AstrologyChart? Chart
@@ -23,6 +24,20 @@ public sealed class HoroscopeChartControl : UserControl
         {
             _chart = value;
             Invalidate();
+        }
+    }
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public bool IsKhmer
+    {
+        get => _isKhmer;
+        set
+        {
+            if (_isKhmer != value)
+            {
+                _isKhmer = value;
+                Invalidate();
+            }
         }
     }
 
@@ -45,8 +60,11 @@ public sealed class HoroscopeChartControl : UserControl
         if (_chart is null || _chart.Houses.Count != 12)
         {
             using var emptyBrush = new SolidBrush(Color.FromArgb(91, 104, 125));
+            var emptyText = _isKhmer
+                ? "សូមគណនាហោរាសាស្ត្រ ដើម្បីបង្ហាញតារាងនេះ។"
+                : "Calculate a horoscope to display this chart.";
             e.Graphics.DrawString(
-                "Calculate a horoscope to display this chart.",
+                emptyText,
                 Font,
                 emptyBrush,
                 new PointF(16, 16));
@@ -111,8 +129,12 @@ public sealed class HoroscopeChartControl : UserControl
             var housePoint = PointOnCircle(center, houseRadius, sectorAngle);
             var placementPoint = PointOnCircle(center, placementRadius, sectorAngle);
 
-            DrawCenteredText(e.Graphics, house.SignNameEn, signBrush, signFont, signPoint);
-            DrawCenteredText(e.Graphics, $"H{house.HouseNumber}", houseBrush, houseFont, housePoint);
+            var signName = _isKhmer && !string.IsNullOrWhiteSpace(house.SignNameKm)
+                ? house.SignNameKm
+                : house.SignNameEn;
+            var houseLabel = _isKhmer ? $"ឋាន{house.HouseNumber}" : $"H{house.HouseNumber}";
+            DrawCenteredText(e.Graphics, signName, signBrush, signFont, signPoint);
+            DrawCenteredText(e.Graphics, houseLabel, houseBrush, houseFont, housePoint);
 
             DrawPlacementLabels(
                 e.Graphics,

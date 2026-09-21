@@ -34,3 +34,20 @@ D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\bin\Debug\net10.0-wi
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\bin\Debug\net10.0-windows\Data\khmer-calendar-month-codes.json.gz
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\bin\Debug\net10.0-windows\Fonts\KhmerOSSiemreap-Regular.ttf
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\bin\Debug\net10.0-windows\Fonts\TOATHMOR WAT LANGKA OLDIE.otf
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\obj\Debug\net10.0-windows\KhmerAstrology.WinForms.sourcelink.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\astrology-constants.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\cambodia-locations.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\interpretations.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\khmer-calendar-month-codes.json.gz
+D:\RiderProjects\KhmerAstrology\temp_build\Data\modern-planetary-coefficients.json.gz
+D:\RiderProjects\KhmerAstrology\temp_build\Data\nakshatras.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\traditional-outer-points.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\zodiac-signs.json
+D:\RiderProjects\KhmerAstrology\temp_build\Fonts\KhmerOSSiemreap-Regular.ttf
+D:\RiderProjects\KhmerAstrology\temp_build\Fonts\TOATHMOR WAT LANGKA OLDIE.otf
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.WinForms.exe
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.WinForms.deps.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.WinForms.runtimeconfig.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.WinForms.dll
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.WinForms.pdb
+d:\RiderProjects\KhmerAstrology\src\KhmerAstrology.WinForms\bin\Debug\net10.0-windows\Data\khmer-calendar-year-codes.txt.gz

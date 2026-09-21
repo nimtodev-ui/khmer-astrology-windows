@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KhmerAstrology")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+963ab22e470a8ca290be83bd7c63960fd7e01019")]
 [assembly: System.Reflection.AssemblyProductAttribute("KhmerAstrology")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KhmerAstrology")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

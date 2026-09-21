@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WorkbookReferenceExtractor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+963ab22e470a8ca290be83bd7c63960fd7e01019")]
 [assembly: System.Reflection.AssemblyProductAttribute("WorkbookReferenceExtractor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WorkbookReferenceExtractor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

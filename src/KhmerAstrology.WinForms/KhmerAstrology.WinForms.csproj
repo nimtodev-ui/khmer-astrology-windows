@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\KhmerAstrology.Domain\KhmerAstrology.Domain.csproj" />
@@ -18,8 +18,10 @@
     </None>
     <None Update="Fonts\TOATHMOR WAT LANGKA OLDIE.otf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    <None Include="..\KhmerAstrology.Infrastructure\Data\khmer-calendar-year-codes.txt.gz"
+          Link="Data\khmer-calendar-year-codes.txt.gz"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>

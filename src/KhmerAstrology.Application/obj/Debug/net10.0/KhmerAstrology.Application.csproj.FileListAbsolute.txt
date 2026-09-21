@@ -15,3 +15,7 @@ D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\refint\KhmerAstrology.Application.dll
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.pdb
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\ref\KhmerAstrology.Application.dll
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Application\obj\Debug\net10.0\KhmerAstrology.Application.sourcelink.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Application.deps.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Application.dll
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Application.pdb

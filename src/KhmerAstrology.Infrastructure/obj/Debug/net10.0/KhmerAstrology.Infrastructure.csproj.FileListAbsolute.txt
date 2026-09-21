@@ -25,3 +25,16 @@ D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\bin\Debug\net1
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\bin\Debug\net10.0\Data\modern-planetary-coefficients.json.gz
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\bin\Debug\net10.0\Data\traditional-outer-points.json
 D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\bin\Debug\net10.0\Data\khmer-calendar-month-codes.json.gz
+D:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\obj\Debug\net10.0\KhmerAstrology.Infrastructure.sourcelink.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\astrology-constants.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\cambodia-locations.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\interpretations.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\khmer-calendar-month-codes.json.gz
+D:\RiderProjects\KhmerAstrology\temp_build\Data\modern-planetary-coefficients.json.gz
+D:\RiderProjects\KhmerAstrology\temp_build\Data\nakshatras.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\traditional-outer-points.json
+D:\RiderProjects\KhmerAstrology\temp_build\Data\zodiac-signs.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Infrastructure.deps.json
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Infrastructure.dll
+D:\RiderProjects\KhmerAstrology\temp_build\KhmerAstrology.Infrastructure.pdb
+d:\RiderProjects\KhmerAstrology\src\KhmerAstrology.Infrastructure\bin\Debug\net10.0\Data\khmer-calendar-year-codes.txt.gz

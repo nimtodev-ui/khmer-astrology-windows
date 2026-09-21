@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -46,6 +46,9 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\khmer-calendar-month-codes.json.gz"
           Link="Data\khmer-calendar-month-codes.json.gz"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\khmer-calendar-year-codes.txt.gz"
+          Link="Data\khmer-calendar-year-codes.txt.gz"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

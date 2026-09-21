@@ -69,8 +69,10 @@ internal static class Program
         services.AddSingleton<D9Calculator>();
         services.AddSingleton<IHouseCalculator, HouseCalculator>();
         services.AddSingleton<IKhmerCalendarMonthReferenceDataSource, JsonKhmerCalendarMonthReferenceDataSource>();
+        services.AddSingleton<IKhmerCalendarYearReferenceDataSource, JsonKhmerCalendarYearReferenceDataSource>();
         services.AddSingleton<IKhmerCalendarCalculator>(serviceProvider => new KhmerCalendarCalculator(
             serviceProvider.GetRequiredService<IKhmerCalendarMonthReferenceDataSource>()));
+        services.AddSingleton<IAutomaticCalendarCalculator, AutomaticCalendarCalculator>();
         services.AddSingleton<ISolarCalculator, SolarCalculator>();
         services.AddSingleton<ILunarCalculator, LunarCalculator>();
         services.AddSingleton<IAscendantCalculator, AscendantCalculator>();
