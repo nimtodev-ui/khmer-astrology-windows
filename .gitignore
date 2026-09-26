@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+
+# IDE / tooling caches
+.vs/
+*.suo
+*.DotSettings.user
+TestResults/
+
+# Runtime logs written next to the executable
+logs/

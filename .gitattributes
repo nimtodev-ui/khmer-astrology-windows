@@ -1,0 +1,9 @@
+# Normalize text files to LF in the repository; checkouts follow the local platform.
+* text=auto
+
+# Binary assets
+*.ttf binary
+*.otf binary
+*.gz binary
+*.png binary
+*.xlsx binary
