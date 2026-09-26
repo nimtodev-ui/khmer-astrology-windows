@@ -70,11 +70,16 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
     private static readonly string[] AnimalYears =
     ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"];
 
-    private readonly IKhmerCalendarMonthReferenceDataSource? _monthReferenceDataSource;
+    private readonly AutomaticCalendarCalculator? _dayWalk;
 
-    public KhmerCalendarCalculator(IKhmerCalendarMonthReferenceDataSource? monthReferenceDataSource = null)
+    /// <param name="yearReferenceDataSource">
+    /// Year codes for the sheet 30 day walk. When supplied, the date-level fields
+    /// (lunar day, month, tithi, animal year) follow the workbook's day-by-day
+    /// lunar calendar; without it only the year-level chain is calculated.
+    /// </param>
+    public KhmerCalendarCalculator(IKhmerCalendarYearReferenceDataSource? yearReferenceDataSource = null)
     {
-        _monthReferenceDataSource = monthReferenceDataSource;
+        _dayWalk = yearReferenceDataSource is null ? null : new AutomaticCalendarCalculator(yearReferenceDataSource);
     }
 
     private static readonly string[] Weekdays =
@@ -95,7 +100,7 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
             CalculateBuddhistYear(astronomicalYear, input.BirthDate.Month, input.BirthDate.Day),
             input.BirthDate.DayOfWeek.ToString());
 
-        return _monthReferenceDataSource is null
+        return _dayWalk is null
             ? result
             : ApplyDateLevelCalendar(result, input);
     }
@@ -248,28 +253,24 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
         KhmerCalendarResult result,
         BirthInput input)
     {
-        var reference = _monthReferenceDataSource!.Get(
-            result.AstronomicalYear,
-            input.BirthDate.Month);
-        var lunarDay = Mod(reference.TithiOffset + input.BirthDate.Day, 30);
-        if (lunarDay == 0)
-        {
-            lunarDay = 30;
-        }
-
-        var lunarDayInPhase = lunarDay <= 15 ? lunarDay : lunarDay - 15;
-        var lunarPhase = lunarDay <= 15 ? "Waxing" : "Waning";
-        var lunarMonthNumber = reference.LunarMonthIndex == 13
-            ? 1
-            : reference.LunarMonthIndex + 1;
-        lunarMonthNumber = Math.Clamp(lunarMonthNumber, 1, 13);
-        var monthNames = reference.LunarYearType == 2
+        // Sheet 30/31 walk the lunar calendar day by day (real 29/30-day months and
+        // month changes inside a Gregorian month), so read the birth day from it.
+        var state = _dayWalk!.GetLunarState(
+            input.BirthDate.Year,
+            input.BirthDate.Month,
+            input.BirthDate.Day);
+        var lunarDay = state.LunarDay;
+        var lunarDayInPhase = state.DayInPhase;
+        var lunarPhase = state.IsWaxing ? "Waxing" : "Waning";
+        var lunarMonthNumber = state.LunarMonthIndex;
+        var monthNames = state.LunarYearType == 2
             ? LeapLunarMonthNames
             : LunarMonthNames;
         var lunarMonthName = monthNames[lunarMonthNumber - 1];
-        var tithiName = GetTithiName(lunarDay);
+        var tithiName = GetTithiName(state);
+        // Sheet 30 M6: the animal year follows the walk's Khmer year (column R).
         var animalIndex = Mod(
-            result.KhmerYear - (lunarMonthNumber <= 4 ? 3 : 2),
+            state.KhmerYear - (lunarMonthNumber <= 4 ? 3 : 2),
             AnimalYears.Length);
         var dateBasedKhmerSystemYear = result.BuddhistYear - 1_182;
         var sesaKalaYoga = (int)Mod(dateBasedKhmerSystemYear + 1_120D, 7D);
@@ -296,14 +297,16 @@ public sealed class KhmerCalendarCalculator : IKhmerCalendarCalculator
         };
     }
 
-    private static string GetTithiName(int lunarDay)
+    private static string GetTithiName(KhmerLunarState state)
     {
-        if (lunarDay == 15)
+        var lunarDay = state.LunarDay;
+        if (state.IsFullMoon)
         {
             return "Full Moon";
         }
 
-        if (lunarDay == 30)
+        // Workbook K6 names both day 29 and day 30 អមាវសី.
+        if (state.IsNewMoon)
         {
             return "New Moon";
         }

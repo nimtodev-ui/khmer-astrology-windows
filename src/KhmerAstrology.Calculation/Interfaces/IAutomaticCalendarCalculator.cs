@@ -15,4 +15,9 @@ public interface IAutomaticCalendarCalculator
     /// Reproduces sheet 31 (ស្វែងរក ថ្ងៃខែឆ្នាំ) from the authoritative workbook.
     /// </summary>
     KhmerDateSearchResult SearchDate(int ceOrBceYear, int gregorianMonth, int day);
+
+    /// <summary>
+    /// Numeric lunar state (sheet 30 columns R:V) for one Gregorian day.
+    /// </summary>
+    KhmerLunarState GetLunarState(int ceOrBceYear, int gregorianMonth, int day);
 }

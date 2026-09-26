@@ -109,6 +109,11 @@ public sealed class MainForm : Form
     private readonly Button _calculateButton = new();
     private readonly Label _resultTitleLabel = new();
     private readonly Label _resultSubtitleLabel = new();
+    private readonly Dictionary<string, (Label Main, Label Detail)> _resultKeyCards = new(StringComparer.Ordinal);
+    private readonly Button _copyResultsButton = new();
+    private Font? _resultSectionFont;
+    private readonly Label _calendarHeadlineLabel = new();
+    private readonly Label _calendarSublineLabel = new();
     private readonly Label _headerStatusLabel = new();
     private readonly Label _languageLabel = new();
     private readonly Button _englishLanguageButton = new();
@@ -1050,10 +1055,12 @@ public sealed class MainForm : Form
         ConfigureGrid(_resultGrid);
         AddLocalizedColumn(_resultGrid, "field", "Field", "វាល");
         AddLocalizedColumn(_resultGrid, "value", "Value", "តម្លៃ");
-        _resultGrid.Columns[0].FillWeight = 36;
-        _resultGrid.Columns[1].FillWeight = 64;
-        _resultGrid.Columns[0].MinimumWidth = 320;
-        _resultGrid.Columns[1].MinimumWidth = 450;
+        _resultGrid.Columns[0].FillWeight = 32;
+        _resultGrid.Columns[1].FillWeight = 68;
+        _resultGrid.Columns[0].MinimumWidth = 240;
+        _resultGrid.Columns[1].MinimumWidth = 380;
+        _resultGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
+        _resultGrid.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
         _resultGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
         _resultGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
         _resultGrid.Rows.Add("Status", "No result yet \u2014 enter a birth profile and click Calculate Horoscope.");
@@ -1071,6 +1078,7 @@ public sealed class MainForm : Form
         AddLocalizedColumn(_planetGrid, "body", "Planet / point", "តារាគ្រោះ");
         AddLocalizedColumn(_planetGrid, "longitude", "Total Longitude (arcmin)", "សំស្ផុដ (លិប្ដា)");
         AddLocalizedColumn(_planetGrid, "sign", "Sign", "រាសី");
+        AddLocalizedColumn(_planetGrid, "house", "House", "ឋាន");
         AddLocalizedColumn(_planetGrid, "deg", "Deg (°)", "អង្សា");
         AddLocalizedColumn(_planetGrid, "min", "Min (′)", "លិប្ដា");
         AddLocalizedColumn(_planetGrid, "sec", "Sec (″)", "ពិលិប្ដា");
@@ -1081,27 +1089,29 @@ public sealed class MainForm : Form
         AddLocalizedColumn(_planetGrid, "d3", "Drekkana (D3)", "ត្រិយាង្ស");
         AddLocalizedColumn(_planetGrid, "linkStatus", "Link Status", "ស្ថានភាព Link");
 
-        int[] planetWidths = [170, 220, 110, 95, 90, 95, 330, 165, 215, 215, 210, 450];
+        int[] planetWidths = [190, 200, 110, 70, 80, 80, 90, 330, 165, 215, 215, 210, 450];
         for (var i = 0; i < planetWidths.Length; i++)
         {
             _planetGrid.Columns[i].MinimumWidth = planetWidths[i];
             _planetGrid.Columns[i].Width = planetWidths[i];
         }
 
-        _planetGrid.Columns[0].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-        _planetGrid.Columns[2].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        _planetGrid.Columns[3].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        _planetGrid.Columns[4].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        _planetGrid.Columns[5].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-        _planetGrid.Columns[6].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[7].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[8].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[9].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[10].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-        _planetGrid.Columns[11].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+        // Numbers centred/right, names left; the body name stays visible while scrolling.
+        foreach (DataGridViewColumn column in _planetGrid.Columns)
+        {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            column.DefaultCellStyle.Alignment = column.Name switch
+            {
+                "longitude" or "sec" => DataGridViewContentAlignment.MiddleRight,
+                "sign" or "house" or "deg" or "min" => DataGridViewContentAlignment.MiddleCenter,
+                _ => DataGridViewContentAlignment.MiddleLeft,
+            };
+        }
+        _planetGrid.Columns["body"]!.Frozen = true;
+        _planetGrid.Columns["house"]!.DefaultCellStyle.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
+        _planetGrid.Columns["house"]!.DefaultCellStyle.ForeColor = BrandBlue;
 
-        _planetGrid.Rows.Add("—", "—", "—", "—", "—", "—", "No calculation yet", "—", "—", "—", "—", "—");
+        _planetGrid.Rows.Add("—", "—", "—", "—", "—", "—", "—", "No calculation yet", "—", "—", "—", "—", "—");
 
         var resultTabs = new TabControl
         {
@@ -1110,9 +1120,9 @@ public sealed class MainForm : Form
             ItemSize = new Size(0, 38),
             Padding = new Point(14, 6),
         };
-        var summaryPage = new TabPage("Summary") { BackColor = Surface, Padding = new Padding(6) };
+        var summaryPage = new TabPage("Details") { BackColor = Surface, Padding = new Padding(6) };
         var planetsPage = new TabPage("Planets & Points") { BackColor = Surface, Padding = new Padding(6) };
-        _localizedTabs.Add((summaryPage, "Summary", "សង្ខេប"));
+        _localizedTabs.Add((summaryPage, "Details", "ព័ត៌មានលម្អិត"));
         _localizedTabs.Add((planetsPage, "Planets & Points", "ភព និងចំណុច"));
         summaryPage.Controls.Add(_resultGrid);
         planetsPage.Controls.Add(_planetGrid);
@@ -1123,7 +1133,7 @@ public sealed class MainForm : Form
         {
             AutoSize = true,
             ForeColor = TextSecondary,
-            Padding = new Padding(0, 12, 0, 0),
+            Margin = new Padding(12, 12, 0, 0),
             Text = "All values are calculated from the entered birth date, time, location, and extracted workbook reference data.",
         };
         RegisterLocalizedControl(
@@ -1131,42 +1141,245 @@ public sealed class MainForm : Form
             "All values are calculated from the entered birth date, time, location, and extracted workbook reference data.",
             "តម្លៃទាំងអស់គណនាតាមថ្ងៃខែឆ្នាំកំណើត ម៉ោង ទីតាំង និងទិន្នន័យយោងដែលបានស្រង់ចេញពីសៀវភៅការងារ។");
 
+        _copyResultsButton.AutoSize = true;
+        _copyResultsButton.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        _copyResultsButton.BackColor = Surface;
+        _copyResultsButton.Cursor = Cursors.Hand;
+        _copyResultsButton.FlatStyle = FlatStyle.Flat;
+        _copyResultsButton.FlatAppearance.BorderColor = Border;
+        _copyResultsButton.FlatAppearance.MouseOverBackColor = BrandBlueLight;
+        _copyResultsButton.Font = _fontProvider.CreateBody(9F, FontStyle.Bold);
+        _copyResultsButton.ForeColor = BrandBlue;
+        _copyResultsButton.Margin = new Padding(0, 8, 0, 0);
+        _copyResultsButton.MinimumSize = new Size(0, 32);
+        _copyResultsButton.Padding = new Padding(10, 0, 10, 0);
+        _copyResultsButton.Text = "Copy results";
+        _copyResultsButton.UseVisualStyleBackColor = false;
+        _copyResultsButton.Enabled = false;
+        _copyResultsButton.Click += (_, _) => CopyResultsToClipboard();
+        RegisterLocalizedControl(_copyResultsButton, "Copy results", "ចម្លងលទ្ធផល");
+        var footer = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
+            WrapContents = false,
+        };
+        footer.Controls.Add(_copyResultsButton);
+        footer.Controls.Add(note);
+
         layout.Controls.Add(heading, 0, 0);
-        layout.Controls.Add(BuildResultsSummaryBar(), 0, 1);
+        layout.Controls.Add(BuildResultKeyFacts(), 0, 1);
         layout.Controls.Add(resultTabs, 0, 2);
-        layout.Controls.Add(note, 0, 3);
+        layout.Controls.Add(footer, 0, 3);
         return layout;
     }
 
-    private Control BuildResultsSummaryBar()
+    private Control BuildResultKeyFacts()
     {
-        var panel = new Panel
-        {
-            BackColor = BrandBlueLight,
-            Dock = DockStyle.Fill,
-            Height = 42,
-            Margin = new Padding(0, 0, 0, 8),
-            Padding = new Padding(12, 6, 12, 6),
-        };
-        panel.Paint += (_, eventArgs) =>
-        {
-            using var pen = new Pen(Color.FromArgb(197, 216, 235));
-            eventArgs.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
-        };
-        var label = new Label
+        var cards = new TableLayoutPanel
         {
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 5,
             Dock = DockStyle.Fill,
-            ForeColor = BrandBlue,
-            Text = "RESULT WORKSPACE  •  Summary, planets, charts, calendar, and interpretation are available in the tabs above.",
-            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 0, 0, 10),
+            RowCount = 1,
         };
-        RegisterLocalizedControl(
-            label,
-            "RESULT WORKSPACE  •  Summary, planets, charts, calendar, and interpretation are available in the tabs above.",
-            "ផ្ទាំងលទ្ធផល  •  សង្ខេប ភព តារាង ប្រតិទិន និងការបកស្រាយមាននៅក្នុងផ្ទាំងខាងលើ។");
-        panel.Controls.Add(label);
-        return panel;
+        (string Key, string English, string Khmer)[] definitions =
+        [
+            ("lagna", "Lagna (Ascendant)", "លគ្នា"),
+            ("sun", "Sun", "ព្រះអាទិត្យ"),
+            ("moon", "Moon  ·  birth nakshatra", "ព្រះចន្ទ  ·  នក្ខត្តឫក្សកំណើត"),
+            ("khmerYear", "Khmer year", "ឆ្នាំខ្មែរ"),
+            ("lunarDate", "Lunar birth date", "ថ្ងៃខែកំណើតតាមចន្ទគតិ"),
+        ];
+        for (var index = 0; index < definitions.Length; index++)
+        {
+            cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+            cards.Controls.Add(BuildResultKeyCard(definitions[index].Key, definitions[index].English, definitions[index].Khmer), index, 0);
+        }
+        return cards;
+    }
+
+    private Control BuildResultKeyCard(string key, string english, string khmer)
+    {
+        var card = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.FromArgb(248, 250, 253),
+            ColumnCount = 1,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(key == "lagna" ? 0 : 5, 0, key == "lunarDate" ? 0 : 5, 0),
+            Padding = new Padding(14, 8, 10, 10),
+            RowCount = 3,
+        };
+        card.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 3; row++)
+        {
+            card.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        }
+        card.Paint += (_, eventArgs) =>
+        {
+            using var pen = new Pen(Border);
+            eventArgs.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+            using var accent = new SolidBrush(key == "lagna" ? Color.FromArgb(218, 167, 39) : BrandBlue);
+            eventArgs.Graphics.FillRectangle(accent, 0, 0, 4, card.Height);
+        };
+
+        var caption = new Label
+        {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(8.5F, FontStyle.Bold),
+            ForeColor = TextSecondary,
+            Margin = new Padding(0),
+            Text = english,
+        };
+        RegisterLocalizedControl(caption, english, khmer);
+        var main = new Label
+        {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(12F, FontStyle.Bold),
+            ForeColor = TextPrimary,
+            Margin = new Padding(0, 4, 0, 2),
+            Text = "—",
+        };
+        var detail = new Label
+        {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(8.5F),
+            ForeColor = TextSecondary,
+            Margin = new Padding(0),
+            Text = " ",
+        };
+        card.Controls.Add(caption, 0, 0);
+        card.Controls.Add(main, 0, 1);
+        card.Controls.Add(detail, 0, 2);
+        _resultKeyCards[key] = (main, detail);
+        return card;
+    }
+
+    private void SetResultKeyCard(string key, string main, string detail)
+    {
+        if (_resultKeyCards.TryGetValue(key, out var card))
+        {
+            card.Main.Text = main;
+            card.Detail.Text = string.IsNullOrWhiteSpace(detail) ? " " : detail;
+        }
+    }
+
+    private void PopulateResultKeyFacts(KhmerAstrology.Application.DTOs.AstrologyResult result)
+    {
+        string Number(int value) => IsKhmer ? ToKhmerDigits(value) : value.ToString(CultureInfo.InvariantCulture);
+        string Position(PlanetPosition position) =>
+            $"{Localize(position.SignNameEn, position.SignNameKm)} {Number(position.Degree)}°{(IsKhmer ? ToKhmerDigits(position.Minute.ToString("00", CultureInfo.InvariantCulture)) : position.Minute.ToString("00", CultureInfo.InvariantCulture))}′";
+        string Nakshatra(PlanetPosition position) =>
+            $"{LocalizeNakshatra(position)} • {Localize("Pada", "បាទ")} {Number(position.Pada)}";
+
+        SetResultKeyCard("lagna", Position(result.Ascendant), Nakshatra(result.Ascendant));
+        var sun = result.Planets.FirstOrDefault(planet => planet.Body == CelestialBody.Sun);
+        SetResultKeyCard(
+            "sun",
+            sun is null ? "—" : Position(sun),
+            sun is null ? string.Empty : $"{Localize("House", "ឋាន")} {Number(sun.House)} • {LocalizeNakshatra(sun)}");
+        var moon = result.Planets.FirstOrDefault(planet => planet.Body == CelestialBody.Moon);
+        SetResultKeyCard(
+            "moon",
+            moon is null ? "—" : LocalizeNakshatra(moon),
+            moon is null ? string.Empty : $"{Position(moon)} • {Localize("Pada", "បាទ")} {Number(moon.Pada)} • {Localize("House", "ឋាន")} {Number(moon.House)}");
+
+        var calendar = result.KhmerCalendar;
+        SetResultKeyCard(
+            "khmerYear",
+            Number(calendar.KhmerYear),
+            $"{Localize("BE", "ព.ស.")} {Number(calendar.BuddhistYear)} • {LocalizeCalendarValue(calendar.YearType)}");
+
+        // The Khmer lunar date comes from the workbook date search (sheet 31), the
+        // same source as the calendar tabs, so every tab shows the same date.
+        try
+        {
+            var birthDate = result.BirthInput.BirthDate;
+            var lunar = _automaticCalendarCalculator.SearchDate(birthDate.Year, birthDate.Month, birthDate.Day);
+            SetResultKeyCard(
+                "lunarDate",
+                $"{lunar.LunarDay}  {lunar.LunarMonth}",
+                $"{LocalizeKhmerWeekday(lunar.SolarWeekday)} • {Localize("Year", "ឆ្នាំ")} {lunar.AnimalYear} • {lunar.TithiName}");
+        }
+        catch (Exception exception)
+        {
+            Trace.WriteLine($"Lunar birth date unavailable: {exception.Message}");
+            SetResultKeyCard("lunarDate", "—", string.Empty);
+        }
+    }
+
+    private string LocalizeNakshatra(PlanetPosition position) =>
+        IsKhmer && position.NakshatraNumber is >= 1 and <= 27
+            ? TrueNakshatraNamesKm[position.NakshatraNumber - 1]
+            : position.NakshatraName;
+
+    private void AddResultSection(string english, string khmer) => AddGridSection(_resultGrid, english, khmer);
+
+    private void AddGridSection(DataGridView grid, string english, string khmer)
+    {
+        var index = grid.Rows.Add(Localize(english, khmer), string.Empty);
+        var style = grid.Rows[index].DefaultCellStyle;
+        style.BackColor = BrandBlueLight;
+        style.ForeColor = BrandBlue;
+        style.SelectionBackColor = BrandBlueLight;
+        style.SelectionForeColor = BrandBlue;
+        style.Font = _resultSectionFont ??= _fontProvider.CreateBody(10F, FontStyle.Bold);
+        grid.Rows[index].Tag = "section";
+    }
+
+    private void CopyResultsToClipboard()
+    {
+        if (_lastResult is null)
+        {
+            return;
+        }
+
+        var text = new System.Text.StringBuilder();
+        text.AppendLine(_resultTitleLabel.Text);
+        text.AppendLine(_resultSubtitleLabel.Text);
+        text.AppendLine();
+        foreach (DataGridViewRow row in _resultGrid.Rows)
+        {
+            var field = row.Cells[0].Value?.ToString() ?? string.Empty;
+            if (Equals(row.Tag, "section"))
+            {
+                text.AppendLine().AppendLine($"[{field}]");
+            }
+            else
+            {
+                text.AppendLine($"{field}: {row.Cells[1].Value}");
+            }
+        }
+
+        text.AppendLine().AppendLine($"[{Localize("Planets & Points", "ភព និងចំណុច")}]");
+        var columns = _planetGrid.Columns.Cast<DataGridViewColumn>().Where(column => column.Visible).ToArray();
+        text.AppendLine(string.Join('\t', columns.Select(column => column.HeaderText)));
+        foreach (DataGridViewRow row in _planetGrid.Rows)
+        {
+            text.AppendLine(string.Join('\t', columns.Select(column => row.Cells[column.Index].Value?.ToString() ?? string.Empty)));
+        }
+
+        try
+        {
+            Clipboard.SetText(text.ToString());
+            _statusLabel.Text = Localize(
+                "Results copied to the clipboard (paste into a document or spreadsheet).",
+                "បានចម្លងលទ្ធផលទៅ Clipboard (អាចបិទភ្ជាប់ក្នុងឯកសារ ឬ Excel)។");
+        }
+        catch (System.Runtime.InteropServices.ExternalException exception)
+        {
+            Trace.WriteLine($"Clipboard unavailable: {exception.Message}");
+            _statusLabel.Text = Localize("The clipboard is busy — try again.", "Clipboard កំពុងប្រើ — សូមព្យាយាមម្តងទៀត។");
+        }
     }
 
     private Control BuildNakshatraPanel()
@@ -1203,12 +1416,62 @@ public sealed class MainForm : Form
         _calendarGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
         _calendarGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
         _calendarGrid.Rows.Add("Status", "Calculate a horoscope to load Khmer calendar data.");
+        _calendarGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
+        _calendarGrid.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
+
+        var headline = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.FromArgb(255, 250, 238),
+            ColumnCount = 1,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 4, 0, 10),
+            Padding = new Padding(16, 10, 16, 10),
+            RowCount = 2,
+        };
+        headline.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        headline.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headline.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headline.Paint += (_, eventArgs) =>
+        {
+            using var pen = new Pen(Color.FromArgb(234, 214, 160));
+            eventArgs.Graphics.DrawRectangle(pen, 0, 0, headline.Width - 1, headline.Height - 1);
+            using var accent = new SolidBrush(Color.FromArgb(218, 167, 39));
+            eventArgs.Graphics.FillRectangle(accent, 0, 0, 4, headline.Height);
+        };
+        _calendarHeadlineLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        _calendarHeadlineLabel.AutoSize = true;
+        _calendarHeadlineLabel.Font = _fontProvider.CreateBody(14F, FontStyle.Bold);
+        _calendarHeadlineLabel.ForeColor = TextPrimary;
+        _calendarHeadlineLabel.Text = "—";
+        _calendarSublineLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        _calendarSublineLabel.AutoSize = true;
+        _calendarSublineLabel.Font = _fontProvider.CreateBody(9F);
+        _calendarSublineLabel.ForeColor = TextSecondary;
+        _calendarSublineLabel.Margin = new Padding(0, 4, 0, 0);
+        _calendarSublineLabel.Text = "Calculate a horoscope to see the birth date in the Khmer calendar.";
+        headline.Controls.Add(_calendarHeadlineLabel, 0, 0);
+        headline.Controls.Add(_calendarSublineLabel, 0, 1);
+
+        var content = new TableLayoutPanel
+        {
+            ColumnCount = 1,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
+            RowCount = 2,
+        };
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        content.Controls.Add(headline, 0, 0);
+        content.Controls.Add(_calendarGrid, 0, 1);
         return BuildDataPanel(
             "Khmer calendar",
             "ប្រតិទិនខ្មែរ",
-            "Calendar, Ahargana, Sankranta, lunar-year, and Suriyayātra bridge values from the workbook chain.",
-            "តម្លៃប្រតិទិន អហរគណ សង្ក្រាន្ត ឆ្នាំចន្ទគតិ និងសូរ្យយាត្រា ដែលបានមកពីខ្សែគណនារបស់សៀវភៅការងារ។",
-            _calendarGrid);
+            "The birth date in the Khmer lunar calendar, the year, New Year (Sankranta) and the workbook calendar chain.",
+            "ថ្ងៃកំណើតតាមប្រតិទិនចន្ទគតិខ្មែរ ឆ្នាំ ឆ្នាំថ្មី (សង្ក្រាន្ត) និងខ្សែគណនាប្រតិទិនរបស់សៀវភៅការងារ។",
+            content);
     }
 
     private Control BuildAutomaticCalendarPanel()
@@ -3356,41 +3619,53 @@ public sealed class MainForm : Form
             $"{location.Place}  •  {ascendantSign} {Localize("Ascendant", "លគ្គនៈ")}";
 
         _resultGrid.Rows.Clear();
-        _resultGrid.Rows.Add(Localize("Status", "ស្ថានភាព"), Localize("Input validated. Khmer calendar calculation completed.", "បានផ្ទៀងផ្ទាត់ព័ត៌មានបញ្ចូល។ ការគណនាប្រតិទិនខ្មែរបានបញ្ចប់។"));
+        AddResultSection("Birth details", "ព័ត៌មានកំណើត");
         _resultGrid.Rows.Add(Localize("Name", "ឈ្មោះ"), input.Name);
         _resultGrid.Rows.Add(Localize("Gender", "ភេទ"), LocalizeChoice(GenderChoices, input.Gender));
         _resultGrid.Rows.Add(Localize("Birth date", "ថ្ងៃខែឆ្នាំកំណើត"), input.BirthDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
         _resultGrid.Rows.Add(Localize("Birth time", "ម៉ោងកំណើត"), input.BirthTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture));
         _resultGrid.Rows.Add(Localize("Location", "ទីតាំង"), $"{location.Country} / {location.Place}");
         _resultGrid.Rows.Add(Localize("Coordinates", "កូអរដោនេ"), $"{input.Latitude.ToString(CultureInfo.InvariantCulture)}, {input.Longitude.ToString(CultureInfo.InvariantCulture)}");
-        _resultGrid.Rows.Add(Localize("IANA time zone", "តំបន់ម៉ោង IANA"), input.TimeZoneId);
         var utcOffsetHours = ResolveEffectiveUtcOffsetHours(input);
-        _resultGrid.Rows.Add(Localize("UTC effective", "UTC មានប្រសិទ្ធភាព"), $"UTC {utcOffsetHours:+0.##;-0.##;0} ({Localize("hours", "ម៉ោង")})");
+        _resultGrid.Rows.Add(Localize("Time zone / UTC", "តំបន់ម៉ោង / UTC"), $"{input.TimeZoneId}  •  UTC {utcOffsetHours:+0.##;-0.##;0}");
         _resultGrid.Rows.Add(Localize("UTC instant", "ពេលវេលា UTC"), FormatUtcInstant(input, utcOffsetHours));
-        _resultGrid.Rows.Add(Localize("Location link", "ស្ថានភាពភ្ជាប់ទីតាំង"), $"{Localize("READY", "រួចរាល់")} — {location.Country} / {location.Place}");
+
+        AddResultSection("Chart", "តារាងជាតា");
+        _resultGrid.Rows.Add(Localize("Ascendant", "លគ្គនៈ"), $"{ascendantSign}, {result.Ascendant.Degree:00}° {result.Ascendant.Minute:00}' {result.Ascendant.Second:00.##}\"; {LocalizeNakshatra(result.Ascendant)}, {Localize("Pada", "បាទា")} {result.Ascendant.Pada}");
+        _resultGrid.Rows.Add(Localize("Positions", "ទីតាំង"), Localize(
+            $"{result.Planets.Count} planets and nodes + {result.AdditionalPoints.Count} traditional points (see Planets & Points)",
+            $"ភព និងថ្នាំង {result.Planets.Count} + ចំណុចបុរាណ {result.AdditionalPoints.Count} (មើល ភព និងចំណុច)"));
+        _resultGrid.Rows.Add(Localize("Interpretations", "ការបកស្រាយ"), Localize(
+            $"{result.Interpretations.Count} house interpretations (see Interpretation tab)",
+            $"ការបកស្រាយឋាន {result.Interpretations.Count} (មើលផ្ទាំងការបកស្រាយ)"));
+
+        AddResultSection("Khmer calendar", "ប្រតិទិនខ្មែរ");
         _resultGrid.Rows.Add(Localize("Astronomical / Khmer / Buddhist year", "ឆ្នាំតារាសាស្ត្រ / ឆ្នាំខ្មែរ / ពុទ្ធសករាជ"), $"{calendar.AstronomicalYear} / {calendar.KhmerYear} / {calendar.BuddhistYear}");
-        _resultGrid.Rows.Add(Localize("Ahargana / Kammaja", "អហរគណ / កម្មជៈ"), $"{calendar.Ahargana:0.##########} / {calendar.Kammaja:0.##########}");
-        _resultGrid.Rows.Add(Localize("Calendar year type", "ប្រភេទឆ្នាំប្រតិទិន"), $"{calendar.YearType} ({calendar.DaysInYear} {Localize("days", "ថ្ងៃ")})");
+        _resultGrid.Rows.Add(Localize("Calendar year type", "ប្រភេទឆ្នាំប្រតិទិន"), $"{LocalizeCalendarValue(calendar.YearType)} ({calendar.DaysInYear} {Localize("days", "ថ្ងៃ")})");
+        _resultGrid.Rows.Add(Localize("Lunar year", "ឆ្នាំចន្ទគតិ"), LocalizeCalendarValue(calendar.LunarYearType));
         _resultGrid.Rows.Add(Localize("Month length / weekday rule", "ច្បាប់ប្រវែងខែ / ថ្ងៃសប្តាហ៍"), $"{calendar.MonthLengthRule} / {calendar.WeekdayAdjustment}");
-        _resultGrid.Rows.Add(Localize("Lunar year", "ឆ្នាំចន្ទគតិ"), calendar.LunarYearType);
-        _resultGrid.Rows.Add(Localize("Avamana / Masakendra / Bori Tithi", "អវមាណ / មាសកេន្ទ្រ / បុរីទិថី"), $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
         _resultGrid.Rows.Add(Localize("New Era weekday", "ថ្ងៃសប្តាហ៍សករាជថ្មី"), LocalizeWeekday(calendar.RiseOfSakWeekday));
         _resultGrid.Rows.Add(Localize("Maha Sankranta", "មហាសង្ក្រាន្ត"), FormatSankrantaDateTime(calendar.MahaSankrantaDay, calendar.MahaSankrantaMonth, calendar.AstronomicalYear, calendar.MahaSankrantaTime));
         _resultGrid.Rows.Add(Localize("Rise of Sak", "វេលាឡើងស័ក"), FormatSankrantaDateTime(calendar.RiseOfSakDay, calendar.RiseOfSakMonth, calendar.AstronomicalYear, calendar.RiseOfSakTime));
-        _resultGrid.Rows.Add(Localize("Ascendant", "លគ្គនៈ"), $"{ascendantSign}, {result.Ascendant.Degree:00}° {result.Ascendant.Minute:00}' {result.Ascendant.Second:00.##}\"; {result.Ascendant.NakshatraName}, {Localize("Pada", "បាទា")} {result.Ascendant.Pada}");
+
+        AddResultSection("Technical (workbook chains)", "បច្ចេកទេស (ខ្សែគណនាសៀវភៅការងារ)");
+        _resultGrid.Rows.Add(Localize("Ahargana / Kammaja", "អហរគណ / កម្មជៈ"), $"{calendar.Ahargana:0.##########} / {calendar.Kammaja:0.##########}");
+        _resultGrid.Rows.Add(Localize("Avamana / Masakendra / Bori Tithi", "អវមាណ / មាសកេន្ទ្រ / បុរីទិថី"), $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
         _resultGrid.Rows.Add(Localize("Traditional Sun chain", "ខ្សែគណនាព្រះអាទិត្យបុរាណ"), $"{result.TraditionalSun.LongitudeArcMinutes:0.#####} {Localize("arcminutes", "នាទីធ្នូ")} (ព្រះអាទិត្យ!B34)");
         _resultGrid.Rows.Add(Localize("Traditional Moon chain", "ខ្សែគណនាព្រះចន្ទបុរាណ"), $"{result.TraditionalMoon.LongitudeArcMinutes:0.#####} {Localize("arcminutes", "នាទីធ្នូ")} (ព្រះចន្ទ!B43)");
-        _resultGrid.Rows.Add(Localize("Planetary positions", "ទីតាំងភព"), result.Planets.Count == 0
-            ? Localize("No planetary positions returned.", "មិនមានទីតាំងភពត្រូវបានបញ្ជូនមកទេ។")
-            : $"{result.Planets.Count} {Localize("workbook-derived positions calculated.", "ទីតាំងដែលបានគណនាតាមសៀវភៅការងារ។")}");
-        _resultGrid.Rows.Add(Localize("Interpretations", "ការបកស្រាយ"), $"{result.Interpretations.Count} {Localize("workbook house interpretations generated.", "ការបកស្រាយឋានតាមសៀវភៅការងារត្រូវបានបង្កើត។")}");
-        _resultGrid.Rows.Add(Localize("Additional workbook points", "ចំណុចបន្ថែមពីសៀវភៅការងារ"), $"{result.AdditionalPoints.Count} {Localize("traditional outer-point positions calculated.", "ទីតាំងចំណុចខាងក្រៅបុរាណត្រូវបានគណនា។")}");
+
+        PopulateResultKeyFacts(result);
+        _copyResultsButton.Enabled = true;
 
         _planetGrid.Rows.Clear();
         AddPlanetRow(result.Ascendant);
         foreach (var planet in result.Planets)
         {
             AddPlanetRow(planet);
+        }
+        foreach (var point in result.AdditionalPoints)
+        {
+            AddPlanetRow(point);
         }
 
         _d1Chart.Chart = result.D1;
@@ -3600,6 +3875,9 @@ public sealed class MainForm : Form
             CelestialBody.KetuDivya => Localize(
                 "Traditional Ketu Divya — Displayed separately from Modern Lahiri",
                 "Traditional Ketu Divya — បង្ហាញដាច់ដោយឡែកពី Modern Lahiri"),
+            CelestialBody.Mrityu or CelestialBody.Varuna or CelestialBody.Yama => Localize(
+                "Traditional outer point — Suriyayātra sheet chain",
+                "ចំណុចខាងក្រៅបុរាណ — ខ្សែគណនាសន្លឹកសូរ្យយាត្រ"),
             _ => "Modern Lahiri — UTC linked",
         };
 
@@ -3613,6 +3891,7 @@ public sealed class MainForm : Form
             bodyName,
             totalMinutes.ToString("0.00", CultureInfo.InvariantCulture),
             signName,
+            IsKhmer ? ToKhmerDigits(position.House) : position.House.ToString(CultureInfo.InvariantCulture),
             deg.ToString(CultureInfo.InvariantCulture),
             min.ToString(CultureInfo.InvariantCulture),
             secStr,
@@ -3650,34 +3929,105 @@ public sealed class MainForm : Form
 
     private void PopulateCalendarGrid(KhmerCalendarResult calendar)
     {
-        _calendarGrid.Rows.Clear();
-        AddCalendarRow("Astronomical year", "ឆ្នាំតារាសាស្ត្រ", calendar.AstronomicalYear);
-        AddCalendarRow("Khmer year", "ឆ្នាំខ្មែរ", calendar.KhmerYear);
-        AddCalendarRow("Buddhist year", "ពុទ្ធសករាជ", calendar.BuddhistYear);
-        AddCalendarRow("Solar year fraction", "ប្រភាគឆ្នាំសុរិយគតិ", calendar.SolarYearFraction.ToString("0.##########", CultureInfo.InvariantCulture));
-        AddCalendarRow("Weekday", "ថ្ងៃសប្តាហ៍", calendar.Weekday);
-        if (!string.IsNullOrWhiteSpace(calendar.TraditionalDate))
+        string Number(int value) => IsKhmer ? ToKhmerDigits(value) : value.ToString(CultureInfo.InvariantCulture);
+        var input = _lastResult?.BirthInput;
+
+        // Khmer names come from the workbook date search (sheet 31); the birth
+        // calendar follows the same day walk, so both describe the same lunar day.
+        KhmerDateSearchResult? lunar = null;
+        if (input is not null)
         {
-            AddCalendarRow("Traditional date", "កាលបរិច្ឆេទប្រពៃណី", calendar.TraditionalDate);
-            AddCalendarRow("Lunar day / phase", "ថ្ងៃចន្ទគតិ / វគ្គ", $"{calendar.LunarDayDisplay} — {calendar.TithiName}");
-            AddCalendarRow("Lunar month", "ខែចន្ទគតិ", $"{calendar.LunarMonthNameEn} ({calendar.LunarMonthNumber})");
-            AddCalendarRow("Animal year", "ឆ្នាំសត្វ", calendar.AnimalYear);
-            AddCalendarRow("Sesa-Kala-Yoga / Yuga", "សេសកាលយោគ / យុគ", $"{calendar.SesaKalaYoga} / {calendar.Yuga}");
+            try
+            {
+                lunar = _automaticCalendarCalculator.SearchDate(input.BirthDate.Year, input.BirthDate.Month, input.BirthDate.Day);
+            }
+            catch (Exception exception)
+            {
+                Trace.WriteLine($"Khmer date search unavailable: {exception.Message}");
+            }
         }
-        AddCalendarRow("Ahargana", "អហរគណ", calendar.Ahargana.ToString("0.##########", CultureInfo.InvariantCulture));
-        AddCalendarRow("Ahargana day", "ថ្ងៃអហរគណ", calendar.AharganaDay);
-        AddCalendarRow("Kammaja", "កម្មជៈ", calendar.Kammaja.ToString("0.##########", CultureInfo.InvariantCulture));
-        AddCalendarRow("Uccabal", "ឧច្ចបាល", calendar.Uccabal);
-        AddCalendarRow("New Era day", "ថ្ងៃឡើងស័ក", calendar.NewEraDay);
-        AddCalendarRow("Year type", "ប្រភេទឆ្នាំ", $"{calendar.YearType} ({calendar.DaysInYear} {Localize("days", "ថ្ងៃ")})");
-        AddCalendarRow("Lunar year type", "ប្រភេទឆ្នាំចន្ទគតិ", calendar.LunarYearType);
+
+        var hasDate = !string.IsNullOrWhiteSpace(calendar.TraditionalDate);
+        var weekday = IsKhmer && lunar is not null ? lunar.SolarWeekday : LocalizeWeekday(calendar.Weekday);
+        var lunarDay = IsKhmer && lunar is not null ? lunar.LunarDay : calendar.LunarDayDisplay;
+        var lunarMonth = IsKhmer && lunar is not null ? lunar.LunarMonth : calendar.LunarMonthNameEn;
+        var animal = IsKhmer && lunar is not null ? lunar.AnimalYear : calendar.AnimalYear;
+        var tithi = IsKhmer && lunar is not null ? lunar.TithiName : calendar.TithiName;
+
+        _calendarHeadlineLabel.Text = hasDate
+            ? Localize(
+                $"{weekday}, {lunarDay} of {lunarMonth}  •  Year of the {animal}  •  BE {calendar.BuddhistYear}",
+                $"ថ្ងៃ{weekday} {lunarDay} {lunarMonth}  •  ឆ្នាំ{animal}  •  ព.ស. {Number(calendar.BuddhistYear)}")
+            : "—";
+        _calendarSublineLabel.Text = input is null
+            ? Localize("Calculate a horoscope to see the birth date in the Khmer calendar.", "សូមគណនាហោរាសាស្ត្រ ដើម្បីមើលថ្ងៃកំណើតតាមប្រតិទិនខ្មែរ។")
+            : Localize(
+                $"Born {input.BirthDate:dd/MM/yyyy} at {input.BirthTime:HH:mm:ss}  •  Khmer year {calendar.KhmerYear} ({LocalizeCalendarValue(calendar.YearType)})  •  {tithi}",
+                $"កើត {input.BirthDate:dd/MM/yyyy} វេលា {input.BirthTime:HH:mm:ss}  •  ឆ្នាំខ្មែរ {Number(calendar.KhmerYear)} ({LocalizeCalendarValue(calendar.YearType)})  •  {tithi}");
+
+        _calendarGrid.Rows.Clear();
+        if (hasDate)
+        {
+            AddGridSection(_calendarGrid, "Lunar birth date", "ថ្ងៃកំណើតតាមចន្ទគតិ");
+            AddCalendarRow("Weekday", "ថ្ងៃសប្តាហ៍", weekday);
+            AddCalendarRow("Lunar day", "តិថីចន្ទគតិ", lunarDay);
+            AddCalendarRow("Tithi", "ឈ្មោះតិថី", tithi);
+            AddCalendarRow("Lunar month", "ខែចន្ទគតិ", $"{lunarMonth} ({Number(calendar.LunarMonthNumber)})");
+            AddCalendarRow("Animal year", "ឆ្នាំសត្វ", animal);
+            AddCalendarRow("Sesa-Kala-Yoga / Yuga", "សេសកាលយោគ / យុគ", $"{Number(calendar.SesaKalaYoga)} / {Number(calendar.Yuga)}");
+        }
+
+        AddGridSection(_calendarGrid, "Year", "ឆ្នាំ");
+        AddCalendarRow("Astronomical / Khmer / Buddhist year", "ឆ្នាំតារាសាស្ត្រ / ឆ្នាំខ្មែរ / ពុទ្ធសករាជ",
+            $"{Number(calendar.AstronomicalYear)} / {Number(calendar.KhmerYear)} / {Number(calendar.BuddhistYear)}");
+        AddCalendarRow("Year type", "ប្រភេទឆ្នាំ", $"{LocalizeCalendarValue(calendar.YearType)} ({Number(calendar.DaysInYear)} {Localize("days", "ថ្ងៃ")})");
+        AddCalendarRow("Lunar year type", "ប្រភេទឆ្នាំចន្ទគតិ", LocalizeCalendarValue(calendar.LunarYearType));
         AddCalendarRow("Month length rule", "ច្បាប់ប្រវែងខែ", calendar.MonthLengthRule);
-        AddCalendarRow("Weekday adjustment", "ការកែតម្រូវថ្ងៃសប្តាហ៍", calendar.WeekdayAdjustment);
-        AddCalendarRow("Avamana / Masakendra / Bori Tithi", "អវមាណ / មាសកេន្ទ្រ / បុរីទិថី", $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
-        AddCalendarRow("New Era weekday", "ថ្ងៃសប្តាហ៍សករាជថ្មី", LocalizeWeekday(calendar.RiseOfSakWeekday));
+
+        AddGridSection(_calendarGrid, "New Year (Sankranta)", "ឆ្នាំថ្មី (សង្ក្រាន្ត)");
         AddCalendarRow("Maha Sankranta", "មហាសង្ក្រាន្ត", FormatSankrantaDateTime(calendar.MahaSankrantaDay, calendar.MahaSankrantaMonth, calendar.AstronomicalYear, calendar.MahaSankrantaTime));
         AddCalendarRow("Rise of Sak", "វេលាឡើងស័ក", FormatSankrantaDateTime(calendar.RiseOfSakDay, calendar.RiseOfSakMonth, calendar.AstronomicalYear, calendar.RiseOfSakTime));
+        AddCalendarRow("New Era weekday", "ថ្ងៃសប្តាហ៍សករាជថ្មី", LocalizeWeekday(calendar.RiseOfSakWeekday));
+
+        AddGridSection(_calendarGrid, "Technical (workbook chain អដ្ឋភុជ្ជ)", "បច្ចេកទេស (ខ្សែគណនា អដ្ឋភុជ្ជ)");
+        AddCalendarRow("Ahargana / Ahargana day", "អហរគណ / ថ្ងៃអហរគណ",
+            $"{calendar.Ahargana.ToString("0.##########", CultureInfo.InvariantCulture)} / {calendar.AharganaDay}");
+        AddCalendarRow("Kammaja", "កម្មជៈ", calendar.Kammaja.ToString("0.##########", CultureInfo.InvariantCulture));
+        AddCalendarRow("Uccabal", "ឧច្ចបាល", calendar.Uccabal);
+        AddCalendarRow("Avamana / Masakendra / Bori Tithi", "អវមាណ / មាសកេន្ទ្រ / បុរីទិថី", $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
+        AddCalendarRow("New Era day", "ថ្ងៃឡើងស័ក", calendar.NewEraDay);
+        AddCalendarRow("Solar year fraction", "ប្រភាគឆ្នាំសុរិយគតិ", calendar.SolarYearFraction.ToString("0.##########", CultureInfo.InvariantCulture));
+        AddCalendarRow("Weekday adjustment", "ការកែតម្រូវថ្ងៃសប្តាហ៍", calendar.WeekdayAdjustment);
+        _calendarGrid.CurrentCell = null;
         _calendarGrid.ClearSelection();
+        ScrollGridToTop(_calendarGrid);
+    }
+
+    // Start at the first section; a grid that is not on screen yet scrolls when shown.
+    private static void ScrollGridToTop(DataGridView grid)
+    {
+        if (grid.Rows.Count == 0)
+        {
+            return;
+        }
+
+        if (grid.Visible && grid.DisplayedRowCount(includePartialRow: true) > 0)
+        {
+            grid.FirstDisplayedScrollingRowIndex = 0;
+            return;
+        }
+
+        void OnVisible(object? sender, EventArgs e)
+        {
+            if (grid.Visible && grid.Rows.Count > 0 && grid.DisplayedRowCount(includePartialRow: true) > 0)
+            {
+                grid.VisibleChanged -= OnVisible;
+                grid.FirstDisplayedScrollingRowIndex = 0;
+            }
+        }
+
+        grid.VisibleChanged -= OnVisible;
+        grid.VisibleChanged += OnVisible;
     }
 
     private void AddCalendarRow(string english, string khmer, object value)
@@ -3854,7 +4204,7 @@ public sealed class MainForm : Form
         if (_planetGrid.Rows.Count > 0 && _lastResult is null)
         {
             _planetGrid.Rows[0].SetValues(
-                "—", "—", "—", "—", "—", "—",
+                "—", "—", "—", "—", "—", "—", "—",
                 Localize("No calculation yet", "មិនទាន់មានការគណនាទេ"),
                 "—", "—", "—", "—", "—");
         }

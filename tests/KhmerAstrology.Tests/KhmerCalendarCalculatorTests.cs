@@ -131,7 +131,7 @@ public sealed class KhmerCalendarCalculatorTests
     [Fact]
     public void CalendarDateDetails_MatchWorkbookAutomaticCalendarSample()
     {
-        var calculator = new KhmerCalendarCalculator(new JsonKhmerCalendarMonthReferenceDataSource());
+        var calculator = new KhmerCalendarCalculator(new JsonKhmerCalendarYearReferenceDataSource());
         var result = calculator.Calculate(new BirthInput
         {
             BirthDate = new DateOnly(2026, 1, 1),
@@ -153,7 +153,7 @@ public sealed class KhmerCalendarCalculatorTests
     [Fact]
     public void BuddhistYear_ChangesOnWorkbookDayOfYearBoundary()
     {
-        var calculator = new KhmerCalendarCalculator(new JsonKhmerCalendarMonthReferenceDataSource());
+        var calculator = new KhmerCalendarCalculator(new JsonKhmerCalendarYearReferenceDataSource());
 
         var dayBeforeBoundary = calculator.Calculate(new BirthInput
         {

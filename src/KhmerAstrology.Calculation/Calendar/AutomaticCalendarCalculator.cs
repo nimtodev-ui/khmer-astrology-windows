@@ -146,51 +146,7 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
         var ad2 = daysBeforeMonth[gregorianMonth - 1];
         var daysInMonth = DaysInMonth(astronomicalYear, gregorianMonth);
 
-        var yearRef = _yearReferenceDataSource.Get(astronomicalYear);
-        var bq2 = yearRef.KhmerYear;
-        var br2 = yearRef.LunarYearType;
-        var bs2 = yearRef.IntercalaryFlag1;
-        var bt2 = yearRef.IntercalaryFlag2;
-        var bu2 = yearRef.StartMonthIndex;
-        var bv2 = yearRef.StartTithiOffset;
-
-        var totalDaysInYear = 365 + ab2;
-        var R = new int[totalDaysInYear];
-        var S = new int[totalDaysInYear];
-        var T = new int[totalDaysInYear];
-        var U = new int[totalDaysInYear];
-        var V = new int[totalDaysInYear];
-        var X = new int[totalDaysInYear];
-
-        // Day 1 (Jan 1, index 0)
-        R[0] = bu2 == 13 ? bq2 + 1 : bq2;
-        S[0] = bu2 == 13 ? bs2 : br2;
-        T[0] = bu2 == 13 ? 1 : bu2 + 1;
-        U[0] = bu2 == 13 ? bv2 : bv2 + 1;
-        V[0] = GetLunarMonthLength(S[0], T[0]);
-        X[0] = bu2 == 13 ? 1 : 0;
-
-        // Day 2..totalDaysInYear
-        for (var i = 1; i < totalDaysInYear; i++)
-        {
-            var yearEnd = (U[i - 1] == V[i - 1]) && (T[i - 1] == (S[i - 1] == 2 ? 13 : 12));
-            R[i] = R[i - 1] + (yearEnd ? 1 : 0);
-            X[i] = X[i - 1] + (yearEnd ? 1 : 0);
-            S[i] = R[i] == R[i - 1] ? S[i - 1] : (X[i] == 1 ? bs2 : bt2);
-
-            if (U[i - 1] < V[i - 1])
-            {
-                T[i] = T[i - 1];
-                U[i] = U[i - 1] + 1;
-            }
-            else
-            {
-                T[i] = T[i - 1] < (S[i - 1] == 2 ? 13 : 12) ? T[i - 1] + 1 : 1;
-                U[i] = 1;
-            }
-
-            V[i] = GetLunarMonthLength(S[i], T[i]);
-        }
+        var (R, S, T, U, V) = WalkYear(astronomicalYear);
 
         var rows = new List<AutomaticCalendarDayRow>(daysInMonth);
         var monthName = GregorianMonthKhmerNames[gregorianMonth - 1];
@@ -269,6 +225,89 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
             MonthName: monthName,
             KromSakarajAuto: ksAuto,
             Days: rows);
+    }
+
+    public KhmerLunarState GetLunarState(int ceOrBceYear, int gregorianMonth, int day)
+    {
+        if (ceOrBceYear == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ceOrBceYear), "Year 0 is not valid.");
+        }
+
+        if (gregorianMonth is < 1 or > 12)
+        {
+            throw new ArgumentOutOfRangeException(nameof(gregorianMonth), "Month must be between 1 and 12.");
+        }
+
+        var astronomicalYear = ceOrBceYear < 0 ? ceOrBceYear + 1 : ceOrBceYear;
+        if (day < 1 || day > DaysInMonth(astronomicalYear, gregorianMonth))
+        {
+            throw new ArgumentOutOfRangeException(nameof(day));
+        }
+
+        var dayIndex = day - 1;
+        for (var month = 1; month < gregorianMonth; month++)
+        {
+            dayIndex += DaysInMonth(astronomicalYear, month);
+        }
+
+        var (r, s, t, u, v) = WalkYear(astronomicalYear);
+        return new KhmerLunarState(r[dayIndex], s[dayIndex], t[dayIndex], u[dayIndex], v[dayIndex]);
+    }
+
+    /// <summary>
+    /// Day-by-day lunar walk for one astronomical year (sheet 30 columns R:X, rows 6..371).
+    /// </summary>
+    private (int[] R, int[] S, int[] T, int[] U, int[] V) WalkYear(int astronomicalYear)
+    {
+        var ab2 = IsLeapYear(astronomicalYear) ? 1 : 0;
+        var yearRef = _yearReferenceDataSource.Get(astronomicalYear);
+        var bq2 = yearRef.KhmerYear;
+        var br2 = yearRef.LunarYearType;
+        var bs2 = yearRef.IntercalaryFlag1;
+        var bt2 = yearRef.IntercalaryFlag2;
+        var bu2 = yearRef.StartMonthIndex;
+        var bv2 = yearRef.StartTithiOffset;
+
+        var totalDaysInYear = 365 + ab2;
+        var R = new int[totalDaysInYear];
+        var S = new int[totalDaysInYear];
+        var T = new int[totalDaysInYear];
+        var U = new int[totalDaysInYear];
+        var V = new int[totalDaysInYear];
+        var X = new int[totalDaysInYear];
+
+        // Day 1 (Jan 1, index 0)
+        R[0] = bu2 == 13 ? bq2 + 1 : bq2;
+        S[0] = bu2 == 13 ? bs2 : br2;
+        T[0] = bu2 == 13 ? 1 : bu2 + 1;
+        U[0] = bu2 == 13 ? bv2 : bv2 + 1;
+        V[0] = GetLunarMonthLength(S[0], T[0]);
+        X[0] = bu2 == 13 ? 1 : 0;
+
+        // Day 2..totalDaysInYear
+        for (var i = 1; i < totalDaysInYear; i++)
+        {
+            var yearEnd = (U[i - 1] == V[i - 1]) && (T[i - 1] == (S[i - 1] == 2 ? 13 : 12));
+            R[i] = R[i - 1] + (yearEnd ? 1 : 0);
+            X[i] = X[i - 1] + (yearEnd ? 1 : 0);
+            S[i] = R[i] == R[i - 1] ? S[i - 1] : (X[i] == 1 ? bs2 : bt2);
+
+            if (U[i - 1] < V[i - 1])
+            {
+                T[i] = T[i - 1];
+                U[i] = U[i - 1] + 1;
+            }
+            else
+            {
+                T[i] = T[i - 1] < (S[i - 1] == 2 ? 13 : 12) ? T[i - 1] + 1 : 1;
+                U[i] = 1;
+            }
+
+            V[i] = GetLunarMonthLength(S[i], T[i]);
+        }
+
+        return (R, S, T, U, V);
     }
 
     public KhmerDateSearchResult SearchDate(int ceOrBceYear, int gregorianMonth, int day)

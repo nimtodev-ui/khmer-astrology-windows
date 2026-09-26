@@ -24,7 +24,6 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         // Workbook reference data
-        services.AddSingleton<IKhmerCalendarMonthReferenceDataSource, JsonKhmerCalendarMonthReferenceDataSource>();
         services.AddSingleton<IKhmerCalendarYearReferenceDataSource, JsonKhmerCalendarYearReferenceDataSource>();
         services.AddSingleton<IModernPlanetaryReferenceDataSource, JsonModernPlanetaryReferenceDataSource>();
         services.AddSingleton<ILocationReferenceDataSource, JsonLocationReferenceDataSource>();
@@ -47,7 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<D9Calculator>();
         services.AddSingleton<IHouseCalculator, HouseCalculator>();
         services.AddSingleton<IKhmerCalendarCalculator>(serviceProvider => new KhmerCalendarCalculator(
-            serviceProvider.GetRequiredService<IKhmerCalendarMonthReferenceDataSource>()));
+            serviceProvider.GetRequiredService<IKhmerCalendarYearReferenceDataSource>()));
         services.AddSingleton<IAutomaticCalendarCalculator, AutomaticCalendarCalculator>();
         services.AddSingleton<ISolarCalculator, SolarCalculator>();
         services.AddSingleton<ILunarCalculator, LunarCalculator>();

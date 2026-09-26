@@ -33,7 +33,10 @@ public sealed class ProductionCalculationPathTests
         Assert.Equal("Pushya", result.Ascendant.NakshatraName);
         Assert.Equal(13, result.Planets.Count);
         Assert.Equal(3, result.AdditionalPoints.Count);
-        Assert.Equal("Second Asalha", result.KhmerCalendar.LunarMonthNameEn);
+        // Day-by-day walk (sheets 30/31): the full moon of 29 Jul 2026 is 15 waxing of
+        // Second Asalha and the new moon of 12 Aug ends it, so 21 Aug 2026 falls in Savana.
+        Assert.Equal("Savana", result.KhmerCalendar.LunarMonthNameEn);
+        Assert.Equal("8 Waxing", result.KhmerCalendar.LunarDayDisplay);
         Assert.Equal("Friday", result.KhmerCalendar.Weekday);
         Assert.Equal(12, result.D1.Houses.Count);
         Assert.Equal(12, result.D3.Houses.Count);
@@ -96,7 +99,7 @@ public sealed class ProductionCalculationPathTests
     {
         var normalizer = new LongitudeNormalizer();
         return new AstrologyCalculationService(
-            new KhmerCalendarCalculator(new JsonKhmerCalendarMonthReferenceDataSource()),
+            new KhmerCalendarCalculator(new JsonKhmerCalendarYearReferenceDataSource()),
             new SolarCalculator(),
             new LunarCalculator(),
             new AscendantCalculator(),
