@@ -45,7 +45,7 @@ public sealed class MainForm : Form
     private readonly Label _statusLabel = new();
     private readonly TextBox _technicalTextBox = new();
     private readonly DataGridView _resultGrid = new();
-    private readonly DataGridView _planetGrid = new();
+    private readonly HorizontalScrollDataGridView _planetGrid = new();
     private readonly DataGridView _nakshatraGrid = new();
     private readonly DataGridView _calendarGrid = new();
     private readonly DataGridView _atthabhujjGrid = new();
@@ -74,7 +74,8 @@ public sealed class MainForm : Form
     private readonly Label _resultSubtitleLabel = new();
     private readonly Label _headerStatusLabel = new();
     private readonly Label _languageLabel = new();
-    private readonly ComboBox _languageComboBox = new();
+    private readonly Button _englishLanguageButton = new();
+    private readonly Button _khmerLanguageButton = new();
     private readonly List<(Label Label, string English, string Khmer)> _localizedFieldLabels = [];
     private readonly List<(Control Control, string English, string Khmer)> _localizedControls = [];
     private readonly List<(TabPage Page, string English, string Khmer)> _localizedTabs = [];
@@ -87,8 +88,28 @@ public sealed class MainForm : Form
     private GroupBox? _calculationWorkspaceGroup;
     private TabControl? _tabs;
     private TabPage? _resultTab;
+    private bool _isRelocalizingChoices;
 
-    private bool IsKhmer => _languageComboBox.SelectedIndex == 1;
+    // Canonical (English) values stored in BirthInput; the combo boxes show the localized text.
+    private static readonly (string English, string Khmer)[] GenderChoices =
+    [
+        ("Male", "ប្រុស"),
+        ("Female", "ស្រី"),
+        ("Other / Not specified", "ផ្សេងៗ / មិនបញ្ជាក់"),
+    ];
+
+    private static readonly (string English, string Khmer)[] CountryChoices =
+    [
+        ("Cambodia", "កម្ពុជា"),
+        ("International", "អន្តរជាតិ"),
+    ];
+
+    private const int InternationalCountryIndex = 1;
+
+    private bool IsInternationalSelected => _countryComboBox.SelectedIndex == InternationalCountryIndex;
+    private bool _isKhmer = UiPreferences.LoadIsKhmer();
+
+    private bool IsKhmer => _isKhmer;
 
     private string Localize(string english, string khmer) => IsKhmer ? khmer : english;
 
@@ -206,8 +227,8 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             RowCount = 2,
         };
-        statusLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62));
-        statusLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+        statusLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        statusLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         statusLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         var workbookModeLabel = new Label
@@ -221,23 +242,22 @@ public sealed class MainForm : Form
         statusLayout.Controls.Add(workbookModeLabel, 0, 0);
         var languagePanel = new FlowLayoutPanel
         {
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
             AutoSize = true,
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Padding(0),
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(8, 0, 0, 0),
             WrapContents = false,
         };
         _languageLabel.AutoSize = true;
         _languageLabel.Font = _fontProvider.CreateBody(8.5F, FontStyle.Bold);
         _languageLabel.ForeColor = TextSecondary;
-        _languageLabel.Margin = new Padding(8, 4, 6, 0);
-        ConfigureComboBox(_languageComboBox, ["English", "ខ្មែរ"]);
-        _languageComboBox.Width = 126;
-        _languageComboBox.Margin = new Padding(0);
-        _languageComboBox.SelectedIndex = 1;
-        _languageComboBox.SelectedIndexChanged += LanguageComboBoxOnSelectedIndexChanged;
-        languagePanel.Controls.Add(_languageComboBox);
+        _languageLabel.Margin = new Padding(0, 6, 8, 0);
+        ConfigureLanguageButton(_englishLanguageButton, "English", isKhmer: false);
+        ConfigureLanguageButton(_khmerLanguageButton, "ខ្មែរ", isKhmer: true);
         languagePanel.Controls.Add(_languageLabel);
+        languagePanel.Controls.Add(_englishLanguageButton);
+        languagePanel.Controls.Add(_khmerLanguageButton);
         statusLayout.Controls.Add(languagePanel, 1, 0);
         _headerStatusLabel.AutoSize = true;
         _headerStatusLabel.Dock = DockStyle.Fill;
@@ -393,11 +413,51 @@ public sealed class MainForm : Form
         {
             Dock = DockStyle.Fill,
             Orientation = Orientation.Vertical,
-            SplitterDistance = 660,
             SplitterWidth = 8,
         };
         split.Panel1.Padding = new Padding(0, 0, 10, 0);
         split.Panel2.Padding = new Padding(10, 0, 0, 0);
+
+        // Keep the birth profile / workspace ratio when the window resizes, and
+        // remember where the user drags the splitter to.
+        var profileRatio = 0.56;
+        var adjustingSplitter = false;
+        var userDragging = false;
+        void AdjustSplitter()
+        {
+            if (split.Width <= 700)
+            {
+                return;
+            }
+
+            adjustingSplitter = true;
+            try
+            {
+                var minLeft = 420;
+                var maxLeft = Math.Max(minLeft, split.Width - 360);
+                split.SplitterDistance = Math.Clamp((int)(split.Width * profileRatio), minLeft, maxLeft);
+            }
+            catch (InvalidOperationException)
+            {
+                // Layout transition while the handle is being created.
+            }
+            finally
+            {
+                adjustingSplitter = false;
+            }
+        }
+
+        split.HandleCreated += (_, _) => AdjustSplitter();
+        split.SizeChanged += (_, _) => AdjustSplitter();
+        split.SplitterMoving += (_, _) => userDragging = true;
+        split.SplitterMoved += (_, _) =>
+        {
+            if (userDragging && !adjustingSplitter && split.Width > 700)
+            {
+                profileRatio = (double)split.SplitterDistance / split.Width;
+            }
+            userDragging = false;
+        };
 
         _birthProfileGroup = new GroupBox
         {
@@ -417,10 +477,10 @@ public sealed class MainForm : Form
             ColumnCount = 2,
             Dock = DockStyle.Top,
             Padding = new Padding(20, 12, 20, 16),
-            RowCount = 14,
+            RowCount = 13,
         };
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 265));
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62));
         for (var i = 0; i < table.RowCount; i++)
         {
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
@@ -428,7 +488,7 @@ public sealed class MainForm : Form
 
         _nameTextBox.Text = "គំរូសូរ្យយាត្រ ២០២៤";
         ConfigureTextBox(_nameTextBox);
-        ConfigureComboBox(_genderComboBox, new[] { "Male", "Female", "Other / Not specified" });
+        ConfigureComboBox(_genderComboBox, GenderChoices.Select(choice => Localize(choice.English, choice.Khmer)));
         ConfigureDatePicker(_birthDatePicker, new DateTime(2024, 10, 28));
         ConfigureDatePicker(_birthTimePicker, new DateTime(2024, 10, 28, 20, 0, 12), DateTimePickerFormat.Time);
         ConfigureTextBox(_astronomicalMasterYearTextBox);
@@ -436,7 +496,7 @@ public sealed class MainForm : Form
         _astronomicalMasterYearTextBox.BackColor = Color.FromArgb(245, 248, 252);
         _astronomicalMasterYearTextBox.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
         _astronomicalMasterYearTextBox.ForeColor = BrandBlue;
-        ConfigureComboBox(_countryComboBox, new[] { "Cambodia", "International" });
+        ConfigureComboBox(_countryComboBox, CountryChoices.Select(choice => Localize(choice.English, choice.Khmer)));
         ConfigureComboBox(_locationComboBox, Array.Empty<string>());
         _locationComboBox.DropDownWidth = 320;
         ConfigureTextBox(_internationalCountryTextBox);
@@ -451,6 +511,9 @@ public sealed class MainForm : Form
         _locationComboBox.SelectedIndexChanged += LocationComboBoxOnSelectedIndexChanged;
         _countryComboBox.SelectedIndexChanged += CountryComboBoxOnSelectedIndexChanged;
         _birthDatePicker.ValueChanged += (_, _) => UpdateMasterBridgeLabels();
+        _birthTimePicker.ValueChanged += (_, _) => UpdateMasterBridgeLabels();
+        _internationalCountryTextBox.TextChanged += (_, _) => UpdateMasterBridgeLabels();
+        _internationalRegionTextBox.TextChanged += (_, _) => UpdateMasterBridgeLabels();
         _latitudeTextBox.TextChanged += (_, _) => UpdateMasterBridgeLabels();
         _longitudeTextBox.TextChanged += (_, _) => UpdateMasterBridgeLabels();
         _timeZoneTextBox.TextChanged += (_, _) => UpdateMasterBridgeLabels();
@@ -472,12 +535,12 @@ public sealed class MainForm : Form
         AddField(table, 12, "UTC override (optional)", "UTC ប្តូរជំនួស (ជាជម្រើស)", _utcOverrideTextBox);
 
         _calculateButton.AutoSize = true;
-        _calculateButton.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+        _calculateButton.Anchor = AnchorStyles.Right;
         _calculateButton.BackColor = BrandBlue;
         _calculateButton.FlatStyle = FlatStyle.Flat;
         _calculateButton.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
         _calculateButton.ForeColor = Color.White;
-        _calculateButton.Margin = new Padding(3, 12, 3, 3);
+        _calculateButton.Margin = new Padding(3, 10, 20, 6);
         _calculateButton.MinimumSize = new Size(250, 46);
         _calculateButton.MaximumSize = new Size(330, 54);
         _calculateButton.Padding = new Padding(18, 8, 18, 8);
@@ -486,9 +549,34 @@ public sealed class MainForm : Form
         _calculateButton.FlatAppearance.BorderSize = 0;
         _calculateButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(28, 76, 128);
         _calculateButton.Click += CalculateButtonOnClick;
-        table.Controls.Add(_calculateButton, 1, 13);
 
-        inputGroup.Controls.Add(table);
+        // Fields scroll; the Calculate action stays pinned below them so it is
+        // always reachable, even on short windows.
+        var fieldsScroller = new Panel
+        {
+            AutoScroll = true,
+            Dock = DockStyle.Fill,
+        };
+        fieldsScroller.Controls.Add(table);
+        var actionBar = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.FromArgb(248, 250, 253),
+            ColumnCount = 1,
+            Dock = DockStyle.Bottom,
+            RowCount = 1,
+        };
+        actionBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        actionBar.Paint += (_, eventArgs) =>
+        {
+            using var pen = new Pen(Border);
+            eventArgs.Graphics.DrawLine(pen, 0, 0, actionBar.Width, 0);
+        };
+        actionBar.Controls.Add(_calculateButton, 0, 0);
+
+        inputGroup.Controls.Add(fieldsScroller);
+        inputGroup.Controls.Add(actionBar);
         split.Panel1.Controls.Add(inputGroup);
         split.Panel2.Controls.Add(BuildFoundationPreview());
         return split;
@@ -525,9 +613,10 @@ public sealed class MainForm : Form
 
         var statusCard = new Panel
         {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = BrandBlueLight,
             Dock = DockStyle.Top,
-            Height = 78,
             Margin = new Padding(0, 0, 0, 12),
             Padding = new Padding(12, 8, 12, 8),
         };
@@ -538,14 +627,19 @@ public sealed class MainForm : Form
         };
         var statusLayout = new TableLayoutPanel
         {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.Transparent,
             ColumnCount = 1,
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
             RowCount = 2,
         };
+        statusLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var phaseLabel = new Label
         {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
             AutoSize = true,
             Font = _fontProvider.CreateBody(10.5F, FontStyle.Bold),
             ForeColor = BrandBlue,
@@ -554,6 +648,7 @@ public sealed class MainForm : Form
         RegisterLocalizedControl(phaseLabel, "READY  •  Workbook-backed calculations", "រួចរាល់  •  ការគណនាផ្អែកលើសៀវភៅការងារ");
         var activeLinkStatusLabel = new Label
         {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
             AutoSize = true,
             Font = _fontProvider.CreateBody(9F),
             ForeColor = TextSecondary,
@@ -585,7 +680,7 @@ public sealed class MainForm : Form
         AddBridgeRow(yearTable, 2, "ksYear", "Krom Sakaraj (Master Year)", "ក.ស. (Internal Master Year)", "5124");
         AddBridgeRow(yearTable, 3, "equivYear", "Year Equivalent", "សមមូលឆ្នាំ", "2024 គ.ស.");
         yearBridgeGroup.Controls.Add(yearTable);
-        yearBridgeGroup.Height = yearTable.PreferredSize.Height + 36;
+        FitGroupToContent(yearBridgeGroup, yearTable);
         layout.Controls.Add(yearBridgeGroup);
 
         var locationBridgeGroup = new GroupBox
@@ -609,7 +704,7 @@ public sealed class MainForm : Form
         AddBridgeRow(locTable, 3, "calcChain", "Calculation Chain", "ខ្សែគណនា", "លគ្នា + តារាគ្រោះ + ឆាយាគ្រោះ (AUTO)");
         AddBridgeRow(locTable, 4, "linkStatus", "Link Status", "ស្ថានភាព Link", "READY — កម្ពុជា / ភ្នំពេញ");
         locationBridgeGroup.Controls.Add(locTable);
-        locationBridgeGroup.Height = locTable.PreferredSize.Height + 36;
+        FitGroupToContent(locationBridgeGroup, locTable);
         layout.Controls.Add(locationBridgeGroup);
 
         var refGroup = new GroupBox
@@ -623,18 +718,29 @@ public sealed class MainForm : Form
             Text = "System Reference  ·  ឯកសារយោង",
         };
         RegisterLocalizedControl(refGroup, "System Reference", "ឯកសារយោងប្រព័ន្ធ");
-        var refText = new Label
+        var refTable = new TableLayoutPanel
         {
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
             Dock = DockStyle.Top,
+            RowCount = 1,
+        };
+        refTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        refTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var refText = new Label
+        {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            AutoSize = true,
             Font = _fontProvider.CreateBody(8.5F),
             ForeColor = TextSecondary,
             Text = "• គម្ពីរសូរ្យយាត្រ៥១០៣ ឆ្នាំ — សន្លឹកទី ២ «សូរ្យយាត្រ» (ចងរូបមន្តដោយលោកគ្រូ វ៉ាន់ ចាន់សារ៉ែន)\r\n" +
                    "• Swiss Ephemeris Lahiri geocentric positions with UTC instant\r\n" +
                    "• 27 Nakshatras with Pali names, 9 Nakshatra types, D1 / D3 / D9 charts",
         };
-        refGroup.Controls.Add(refText);
-        refGroup.Height = refText.PreferredSize.Height + 34;
+        refTable.Controls.Add(refText, 0, 0);
+        refGroup.Controls.Add(refTable);
+        FitGroupToContent(refGroup, refTable);
         layout.Controls.Add(refGroup);
 
         scrollContainer.Controls.Add(layout);
@@ -2026,28 +2132,6 @@ public sealed class MainForm : Form
         return group;
     }
 
-    private Control BuildAtthabhujjPanelLegacy()
-    {
-        ConfigureGrid(_atthabhujjGrid);
-        AddLocalizedColumn(_atthabhujjGrid, "field", "Atthabhujj field", "វាលអដ្ឋភុជ្ជ");
-        AddLocalizedColumn(_atthabhujjGrid, "value", "Value", "តម្លៃ");
-        AddLocalizedColumn(_atthabhujjGrid, "source", "Workbook cell", "ក្រឡាសៀវភៅការងារ");
-        _atthabhujjGrid.Columns[0].FillWeight = 34;
-        _atthabhujjGrid.Columns[1].FillWeight = 46;
-        _atthabhujjGrid.Columns[2].FillWeight = 20;
-        _atthabhujjGrid.Rows.Add(
-            Localize("Status", "ស្ថានភាព"),
-            Localize("Calculate a horoscope to load Atthabhujj values.", "សូមគណនាហោរាសាស្ត្រ ដើម្បីផ្ទុកតម្លៃអដ្ឋភុជ្ជ។"),
-            "អដ្ឋភុជ្ជ");
-
-        return BuildDataPanel(
-            "Atthabhujj / calendar bridge",
-            "អដ្ឋភុជ្ជ / ខ្សែភ្ជាប់ប្រតិទិន",
-            "Workbook-backed calendar bridge and Maha Sankranta values from the Atthabhujj sheet.",
-            "ខ្សែភ្ជាប់ប្រតិទិន និងតម្លៃមហាសង្ក្រាន្តដែលផ្អែកលើសន្លឹកអដ្ឋភុជ្ជក្នុងសៀវភៅការងារ។",
-            _atthabhujjGrid);
-    }
-
     private Control BuildInterpretationPanel()
     {
         _interpretationTextBox.Dock = DockStyle.Fill;
@@ -2172,10 +2256,12 @@ public sealed class MainForm : Form
 
     private void CountryComboBoxOnSelectedIndexChanged(object? sender, EventArgs e)
     {
-        var cambodiaSelected = string.Equals(
-            _countryComboBox.SelectedItem?.ToString(),
-            "Cambodia",
-            StringComparison.Ordinal);
+        if (_isRelocalizingChoices)
+        {
+            return;
+        }
+
+        var cambodiaSelected = !IsInternationalSelected;
 
         _locationComboBox.Enabled = cambodiaSelected;
         _internationalCountryTextBox.Enabled = !cambodiaSelected;
@@ -2199,6 +2285,16 @@ public sealed class MainForm : Form
         UpdateMasterBridgeLabels();
     }
 
+    // GroupBox.AutoSize measures its content before labels wrap, which clipped the
+    // last rows; follow the docked content's real height instead.
+    private static void FitGroupToContent(GroupBox group, Control content)
+    {
+        void Fit() => group.Height = content.Bottom + group.Padding.Bottom;
+        content.SizeChanged += (_, _) => Fit();
+        content.LocationChanged += (_, _) => Fit();
+        Fit();
+    }
+
     private TableLayoutPanel CreateBridgeKeyValueTable(int rowCount)
     {
         var table = new TableLayoutPanel
@@ -2210,11 +2306,11 @@ public sealed class MainForm : Form
             Padding = new Padding(4, 2, 4, 4),
             RowCount = rowCount,
         };
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 220));
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
         for (var i = 0; i < rowCount; i++)
         {
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         }
         return table;
     }
@@ -2229,22 +2325,22 @@ public sealed class MainForm : Form
     {
         var label = new Label
         {
-            Anchor = AnchorStyles.Left,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
             AutoSize = true,
             Font = _fontProvider.CreateBody(8.5F),
             ForeColor = TextLabel,
-            Margin = new Padding(0, 0, 6, 0),
+            Margin = new Padding(0, 5, 6, 5),
             Text = Localize(englishLabel, khmerLabel),
         };
         _localizedFieldLabels.Add((label, englishLabel, khmerLabel));
 
         var valueLabel = new Label
         {
-            Anchor = AnchorStyles.Left,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
             AutoSize = true,
             Font = _fontProvider.CreateBody(9F, FontStyle.Bold),
             ForeColor = TextPrimary,
-            Margin = new Padding(0),
+            Margin = new Padding(0, 5, 0, 5),
             Text = initialValue,
         };
         _masterBridgeLabels[key] = valueLabel;
@@ -2287,13 +2383,15 @@ public sealed class MainForm : Form
             equivLbl.Text = IsKhmer ? $"{ToKhmerDigits(year)} គ.ស." : $"{year} CE";
         }
 
-        var internationalSelected = string.Equals(
-            _countryComboBox.SelectedItem?.ToString(),
-            "International",
-            StringComparison.Ordinal);
+        var internationalSelected = IsInternationalSelected;
         var activeLoc = internationalSelected
-            ? $"{_internationalCountryTextBox.Text.Trim()} / {_internationalRegionTextBox.Text.Trim()}"
-            : $"កម្ពុជា / {(_locationComboBox.SelectedItem is AstrologyLocation loc ? (IsKhmer ? loc.NameKm : loc.NameEn) : "ភ្នំពេញ")}";
+            ? $"{_internationalCountryTextBox.Text.Trim()} / {_internationalRegionTextBox.Text.Trim()}".Trim(' ', '/')
+            : $"{Localize(CountryChoices[0].English, CountryChoices[0].Khmer)} / " +
+              (_locationComboBox.SelectedItem is AstrologyLocation loc ? Localize(loc.NameEn, loc.NameKm) : "—");
+        if (string.IsNullOrWhiteSpace(activeLoc))
+        {
+            activeLoc = Localize("International location not entered", "មិនទាន់បញ្ចូលទីតាំងអន្តរជាតិ");
+        }
 
         if (_masterBridgeLabels.TryGetValue("activeLoc", out var locLbl))
         {
@@ -2305,15 +2403,35 @@ public sealed class MainForm : Form
             coordLbl.Text = $"{_latitudeTextBox.Text}, {_longitudeTextBox.Text}";
         }
 
-        var effectiveUtc = double.TryParse(_utcOverrideTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var u)
-            ? u
-            : 7.00;
+        var effectiveUtc = ResolveWorkspaceUtcOffsetHours();
         if (_masterBridgeLabels.TryGetValue("timeZoneUtc", out var tzLbl))
         {
-            tzLbl.Text = $"{_timeZoneTextBox.Text} / UTC {effectiveUtc:+0.##;-0.##;0.00}";
+            var utcText = effectiveUtc is double offset
+                ? $"UTC {offset.ToString("+0.##;-0.##;0", CultureInfo.InvariantCulture)}"
+                : Localize("UTC unknown", "UTC មិនស្គាល់");
+            var zoneText = string.IsNullOrWhiteSpace(_timeZoneTextBox.Text) ? "—" : _timeZoneTextBox.Text.Trim();
+            tzLbl.Text = $"{zoneText} / {utcText}";
         }
 
-        var readyStatus = $"READY — {activeLoc}";
+        if (_masterBridgeLabels.TryGetValue("calcChain", out var chainLbl))
+        {
+            chainLbl.Text = Localize(
+                "Ascendant + planets + shadow points (AUTO)",
+                "លគ្នា + តារាគ្រោះ + ឆាយាគ្រោះ (AUTO)");
+        }
+
+        var coordinatesValid =
+            double.TryParse(_latitudeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude)
+            && double.TryParse(_longitudeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude)
+            && latitude is >= -90 and <= 90
+            && longitude is >= -180 and <= 180;
+        var isReady = coordinatesValid && effectiveUtc is not null;
+        var readyStatus = isReady
+            ? $"{Localize("READY", "រួចរាល់")} — {activeLoc}"
+            : $"{Localize("CHECK INPUT", "សូមពិនិត្យព័ត៌មាន")} — " +
+              (coordinatesValid
+                  ? Localize("time zone not recognised", "មិនស្គាល់តំបន់ម៉ោង")
+                  : Localize("latitude / longitude missing or invalid", "រយៈទទឹង / រយៈបណ្តោយ មិនត្រឹមត្រូវ"));
         if (_masterBridgeLabels.TryGetValue("linkStatus", out var linkLbl))
         {
             linkLbl.Text = readyStatus;
@@ -2322,6 +2440,35 @@ public sealed class MainForm : Form
         if (_masterBridgeLabels.TryGetValue("activeLinkStatus", out var activeLinkLbl))
         {
             activeLinkLbl.Text = readyStatus;
+            activeLinkLbl.ForeColor = isReady ? TextSecondary : Color.FromArgb(176, 72, 32);
+        }
+    }
+
+    private double? ResolveWorkspaceUtcOffsetHours()
+    {
+        if (double.TryParse(_utcOverrideTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var overrideHours))
+        {
+            return overrideHours;
+        }
+
+        var timeZoneId = _timeZoneTextBox.Text.Trim();
+        if (timeZoneId.Length == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var localDateTime = _birthDatePicker.Value.Date + _birthTimePicker.Value.TimeOfDay;
+            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId).GetUtcOffset(localDateTime).TotalHours;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return null;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return null;
         }
     }
 
@@ -2333,7 +2480,7 @@ public sealed class MainForm : Form
             {
                 var input = CreateBirthInput();
                 var result = _astrologyCalculationService.Calculate(input);
-                DisplayResult(result);
+                DisplayResult(result, selectResultTab: false);
             }
         }
         catch
@@ -2342,34 +2489,66 @@ public sealed class MainForm : Form
         }
     }
 
-    private void LanguageComboBoxOnSelectedIndexChanged(object? sender, EventArgs e)
+    // Plain buttons rather than RadioButtons: a RadioButton checks itself when it
+    // receives keyboard focus, which silently switched the language at start-up.
+    private void ConfigureLanguageButton(Button button, string text, bool isKhmer)
     {
-        ApplyLanguage();
+        button.AutoSize = true;
+        button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        button.Cursor = Cursors.Hand;
+        button.FlatStyle = FlatStyle.Flat;
+        button.FlatAppearance.BorderColor = Border;
+        button.Font = _fontProvider.CreateBody(9F, FontStyle.Bold);
+        button.Margin = new Padding(0);
+        button.MinimumSize = new Size(64, 30);
+        button.Padding = new Padding(8, 0, 8, 0);
+        button.Text = text;
+        button.TextAlign = ContentAlignment.MiddleCenter;
+        button.UseVisualStyleBackColor = false;
+        button.AccessibleName = isKhmer ? "Khmer language" : "English language";
+        button.Click += (_, _) => SetLanguage(isKhmer);
+    }
+
+    private void UpdateLanguageButtons()
+    {
+        foreach (var (button, isKhmer) in new[] { (_englishLanguageButton, false), (_khmerLanguageButton, true) })
+        {
+            var selected = _isKhmer == isKhmer;
+            button.BackColor = selected ? BrandBlue : Surface;
+            button.ForeColor = selected ? Color.White : TextPrimary;
+            button.FlatAppearance.MouseOverBackColor = selected ? BrandBlue : BrandBlueLight;
+            button.AccessibleDescription = selected ? "Selected" : null;
+        }
+    }
+
+    private void SetLanguage(bool isKhmer)
+    {
+        if (_isKhmer == isKhmer)
+        {
+            return;
+        }
+
+        _isKhmer = isKhmer;
+        UiPreferences.SaveIsKhmer(isKhmer);
+        SuspendLayout();
+        try
+        {
+            ApplyLanguage();
+        }
+        finally
+        {
+            ResumeLayout(true);
+        }
     }
 
     private void ApplyLanguage()
     {
-        var khmer = _languageComboBox.SelectedIndex == 1;
-
-        Text = khmer
-            ? "ហោរាសាស្ត្រខ្មែរ — ប្រព័ន្ធគណនាសូរ្យយាត្រ"
-            : "Khmer Astrology — Suriyayātra Calculation System";
-        _brandTitleLabel?.Text = khmer ? "ហោរាសាស្ត្រខ្មែរ" : "KHMER ASTROLOGY";
-        _brandSubtitleLabel?.Text = khmer
-            ? "ប្រព័ន្ធគណនាសូរ្យយាត្រ • យោងតាមសៀវភៅ Excel"
-            : "Suriyayātra Calculation System  •  Workbook-backed foundation";
-        _languageLabel.Text = khmer ? "ភាសា" : "Language";
-        _birthProfileGroup?.Text = khmer ? "ព័ត៌មានកំណើត" : "Birth profile";
-        _calculationWorkspaceGroup?.Text = khmer ? "ផ្ទាំងការគណនា" : "Calculation workspace";
-        _calculateButton.Text = khmer ? "គណនាហោរាសាស្ត្រ" : "CALCULATE HOROSCOPE";
-        _resultTitleLabel.Text = khmer ? "លទ្ធផលការគណនា" : "Calculation results";
-        _resultSubtitleLabel.Text = khmer
-            ? "បញ្ចូលព័ត៌មានកំណើត រួចចុចគណនា ដើម្បីបង្ហាញលទ្ធផល។"
-            : "Calculate a birth profile to populate this workspace.";
-        _headerStatusLabel.Text = khmer ? "រួចរាល់សម្រាប់ព័ត៌មានកំណើត" : "Ready for a birth profile";
-        _statusLabel.Text = khmer
-            ? "រួចរាល់ — មិនទាន់បានស្នើសុំការគណនា។"
-            : "Ready — no calculation has been requested.";
+        var khmer = _isKhmer;
+        UpdateLanguageButtons();
+        _resultTitleLabel.Text = Localize("Calculation results", "លទ្ធផលការគណនា");
+        _resultSubtitleLabel.Text = Localize(
+            "Calculate a birth profile to populate this workspace.",
+            "បញ្ចូលព័ត៌មានកំណើត រួចចុចគណនា ដើម្បីបង្ហាញលទ្ធផល។");
 
         foreach (var field in _localizedFieldLabels)
         {
@@ -2409,9 +2588,12 @@ public sealed class MainForm : Form
         _d3Chart.IsKhmer = khmer;
         _d9Chart.IsKhmer = khmer;
 
+        RelocalizeChoiceComboBox(_genderComboBox, GenderChoices);
+        RelocalizeChoiceComboBox(_countryComboBox, CountryChoices);
+
         if (_lastResult is not null)
         {
-            DisplayResult(_lastResult);
+            DisplayResult(_lastResult, selectResultTab: false);
         }
         else
         {
@@ -2506,24 +2688,11 @@ public sealed class MainForm : Form
         try
         {
             var result = _astrologyCalculationService.Calculate(input);
-            var calendar = result.KhmerCalendar;
-            _statusLabel.Text =
-                $"Calculated {input.Name}: Khmer year {calendar.KhmerYear}, " +
-                $"{calendar.YearType}; {result.CalculationStage}";
-            _headerStatusLabel.Text = $"Calculated {input.Name}  •  {input.BirthDate:dd/MM/yyyy}";
             DisplayResult(result);
         }
         catch (Exception exception)
         {
             Trace.WriteLine(exception);
-            _statusLabel.Text = Localize(
-                "Calculation failed. Correct the input or review the technical log.",
-                "ការគណនាបានបរាជ័យ។ សូមកែព័ត៌មានបញ្ចូល ឬពិនិត្យកំណត់ហេតុបច្ចេកទេស។");
-            _headerStatusLabel.Text = Localize(
-                "Calculation failed — review the input",
-                "ការគណនាបានបរាជ័យ — សូមពិនិត្យព័ត៌មានបញ្ចូល");
-            _statusLabel.Text = "Calculation failed. Correct the input or review the technical log.";
-            _headerStatusLabel.Text = "Calculation failed — review the input";
             _statusLabel.Text = Localize(
                 "Calculation failed. Correct the input or review the technical log.",
                 "ការគណនាបានបរាជ័យ។ សូមកែព័ត៌មានបញ្ចូល ឬពិនិត្យកំណត់ហេតុបច្ចេកទេស។");
@@ -2558,10 +2727,7 @@ public sealed class MainForm : Form
             valid = false;
         }
 
-        var internationalSelected = string.Equals(
-            _countryComboBox.SelectedItem?.ToString(),
-            "International",
-            StringComparison.Ordinal);
+        var internationalSelected = IsInternationalSelected;
         if (internationalSelected && string.IsNullOrWhiteSpace(_internationalCountryTextBox.Text))
         {
             SetError(_internationalCountryTextBox, Localize("International country is required.", "ត្រូវបញ្ចូលប្រទេសអន្តរជាតិ។"));
@@ -2630,14 +2796,13 @@ public sealed class MainForm : Form
 
     private BirthInput CreateBirthInput()
     {
-        var internationalSelected = string.Equals(
-            _countryComboBox.SelectedItem?.ToString(),
-            "International",
-            StringComparison.Ordinal);
+        var internationalSelected = IsInternationalSelected;
         return new BirthInput
         {
             Name = _nameTextBox.Text.Trim(),
-            Gender = _genderComboBox.Text,
+            Gender = _genderComboBox.SelectedIndex >= 0
+                ? GenderChoices[_genderComboBox.SelectedIndex].English
+                : GenderChoices[^1].English,
             BirthDate = DateOnly.FromDateTime(_birthDatePicker.Value),
             BirthTime = TimeOnly.FromDateTime(_birthTimePicker.Value),
             Country = internationalSelected ? _internationalCountryTextBox.Text.Trim() : "Cambodia",
@@ -2657,15 +2822,16 @@ public sealed class MainForm : Form
         };
     }
 
-    private void DisplayResult(KhmerAstrology.Application.DTOs.AstrologyResult result)
+    private void DisplayResult(KhmerAstrology.Application.DTOs.AstrologyResult result, bool selectResultTab = true)
     {
         _lastResult = result;
         var input = result.BirthInput;
         var calendar = result.KhmerCalendar;
         var ascendantSign = Localize(result.Ascendant.SignNameEn, result.Ascendant.SignNameKm);
+        var location = FormatBirthLocation(input);
         _statusLabel.Text = Localize(
             $"Calculated {input.Name}: Khmer year {calendar.KhmerYear}, {calendar.YearType}; {result.CalculationStage}",
-            $"បានគណនា {input.Name}៖ ឆ្នាំខ្មែរ {calendar.KhmerYear}, {calendar.YearType}; {result.CalculationStage}");
+            $"បានគណនា {input.Name}៖ ឆ្នាំខ្មែរ {ToKhmerDigits(calendar.KhmerYear)}, {LocalizeCalendarValue(calendar.YearType)}");
         _headerStatusLabel.Text = Localize(
             $"Calculated {input.Name}  •  {input.BirthDate:dd/MM/yyyy}",
             $"បានគណនា {input.Name}  •  {input.BirthDate:dd/MM/yyyy}");
@@ -2673,21 +2839,21 @@ public sealed class MainForm : Form
         _resultTitleLabel.Text = $"{Localize("Calculation results", "លទ្ធផលការគណនា")}  •  {input.Name}";
         _resultSubtitleLabel.Text =
             $"{input.BirthDate:dd/MM/yyyy} {Localize("at", "វេលា")} {input.BirthTime:HH:mm:ss}  •  " +
-            $"{input.Province ?? input.Country}  •  {ascendantSign} {Localize("Ascendant", "លគ្គនៈ")}";
+            $"{location.Place}  •  {ascendantSign} {Localize("Ascendant", "លគ្គនៈ")}";
 
         _resultGrid.Rows.Clear();
         _resultGrid.Rows.Add(Localize("Status", "ស្ថានភាព"), Localize("Input validated. Khmer calendar calculation completed.", "បានផ្ទៀងផ្ទាត់ព័ត៌មានបញ្ចូល។ ការគណនាប្រតិទិនខ្មែរបានបញ្ចប់។"));
         _resultGrid.Rows.Add(Localize("Name", "ឈ្មោះ"), input.Name);
-        _resultGrid.Rows.Add(Localize("Gender", "ភេទ"), input.Gender);
+        _resultGrid.Rows.Add(Localize("Gender", "ភេទ"), LocalizeChoice(GenderChoices, input.Gender));
         _resultGrid.Rows.Add(Localize("Birth date", "ថ្ងៃខែឆ្នាំកំណើត"), input.BirthDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
         _resultGrid.Rows.Add(Localize("Birth time", "ម៉ោងកំណើត"), input.BirthTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture));
-        _resultGrid.Rows.Add(Localize("Location", "ទីតាំង"), $"{input.Country} / {input.Province ?? Localize("International location", "ទីតាំងអន្តរជាតិ")}");
+        _resultGrid.Rows.Add(Localize("Location", "ទីតាំង"), $"{location.Country} / {location.Place}");
         _resultGrid.Rows.Add(Localize("Coordinates", "កូអរដោនេ"), $"{input.Latitude.ToString(CultureInfo.InvariantCulture)}, {input.Longitude.ToString(CultureInfo.InvariantCulture)}");
         _resultGrid.Rows.Add(Localize("IANA time zone", "តំបន់ម៉ោង IANA"), input.TimeZoneId);
         var utcOffsetHours = ResolveEffectiveUtcOffsetHours(input);
         _resultGrid.Rows.Add(Localize("UTC effective", "UTC មានប្រសិទ្ធភាព"), $"UTC {utcOffsetHours:+0.##;-0.##;0} ({Localize("hours", "ម៉ោង")})");
         _resultGrid.Rows.Add(Localize("UTC instant", "ពេលវេលា UTC"), FormatUtcInstant(input, utcOffsetHours));
-        _resultGrid.Rows.Add(Localize("Location link", "ស្ថានភាពភ្ជាប់ទីតាំង"), $"READY — {input.Country} / {input.Province ?? Localize("manual coordinates", "កូអរដោនេដោយដៃ")}");
+        _resultGrid.Rows.Add(Localize("Location link", "ស្ថានភាពភ្ជាប់ទីតាំង"), $"{Localize("READY", "រួចរាល់")} — {location.Country} / {location.Place}");
         _resultGrid.Rows.Add(Localize("Astronomical / Khmer / Buddhist year", "ឆ្នាំតារាសាស្ត្រ / ឆ្នាំខ្មែរ / ពុទ្ធសករាជ"), $"{calendar.AstronomicalYear} / {calendar.KhmerYear} / {calendar.BuddhistYear}");
         _resultGrid.Rows.Add(Localize("Ahargana / Kammaja", "អហរគណ / កម្មជៈ"), $"{calendar.Ahargana:0.##########} / {calendar.Kammaja:0.##########}");
         _resultGrid.Rows.Add(Localize("Calendar year type", "ប្រភេទឆ្នាំប្រតិទិន"), $"{calendar.YearType} ({calendar.DaysInYear} {Localize("days", "ថ្ងៃ")})");
@@ -2725,65 +2891,53 @@ public sealed class MainForm : Form
         _nakshatraGrid.ClearSelection();
         _calendarGrid.ClearSelection();
 
-        if (_tabs is not null && _resultTab is not null)
+        if (selectResultTab && _tabs is not null && _resultTab is not null)
         {
             _tabs.SelectedTab = _resultTab;
         }
     }
 
-    private void DisplayResultLegacy(KhmerAstrology.Application.DTOs.AstrologyResult result)
+    private (string Country, string Place) FormatBirthLocation(BirthInput input)
     {
-        var input = result.BirthInput;
-        var calendar = result.KhmerCalendar;
-        _resultTitleLabel.Text = $"Calculation results  •  {input.Name}";
-        _resultSubtitleLabel.Text =
-            $"{input.BirthDate:dd/MM/yyyy} at {input.BirthTime:HH:mm:ss}  •  " +
-            $"{input.Province ?? input.Country}  •  {result.Ascendant.SignNameEn} Ascendant";
-        _resultGrid.Rows.Clear();
-        _resultGrid.Rows.Add("Status", "Input validated. Khmer calendar calculation completed.");
-        _resultGrid.Rows.Add("Name", input.Name);
-        _resultGrid.Rows.Add("Gender", input.Gender);
-        _resultGrid.Rows.Add("Birth date", input.BirthDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
-        _resultGrid.Rows.Add("Birth time", input.BirthTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture));
-        _resultGrid.Rows.Add("Location", $"{input.Country} / {input.Province ?? "International location"}");
-        _resultGrid.Rows.Add("Coordinates", $"{input.Latitude.ToString(CultureInfo.InvariantCulture)}, {input.Longitude.ToString(CultureInfo.InvariantCulture)}");
-        _resultGrid.Rows.Add("Timezone", input.TimeZoneId);
-        _resultGrid.Rows.Add("Khmer year / Buddhist year", $"{calendar.KhmerYear} / {calendar.BuddhistYear}");
-        _resultGrid.Rows.Add("Ahargana / Kammaja", $"{calendar.Ahargana:0.##########} / {calendar.Kammaja:0.##########}");
-        _resultGrid.Rows.Add("Calendar year type", $"{calendar.YearType} ({calendar.DaysInYear} days)");
-        _resultGrid.Rows.Add("Lunar year", calendar.LunarYearType);
-        _resultGrid.Rows.Add("Avamana / Masakendra / Bori Tithi", $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
-        _resultGrid.Rows.Add("New Era weekday", calendar.RiseOfSakWeekday);
-        _resultGrid.Rows.Add("Maha Sankranta", $"{calendar.MahaSankrantaDay} April {calendar.AstronomicalYear}, {calendar.MahaSankrantaTime:hh\\:mm\\:ss}");
-        _resultGrid.Rows.Add("Rise of Sak", $"{calendar.RiseOfSakDay} April {calendar.AstronomicalYear}, {calendar.RiseOfSakTime:hh\\:mm\\:ss}");
-        _resultGrid.Rows.Add("Ascendant", $"{result.Ascendant.SignNameEn} / {result.Ascendant.SignNameKm}, {result.Ascendant.Degree:00}° {result.Ascendant.Minute:00}' {result.Ascendant.Second:00.##}\"; {result.Ascendant.NakshatraName}, Pada {result.Ascendant.Pada}");
-        _resultGrid.Rows.Add("Traditional Sun chain", $"{result.TraditionalSun.LongitudeArcMinutes:0.#####} arcminutes (ព្រះអាទិត្យ!B34)");
-        _resultGrid.Rows.Add("Traditional Moon chain", $"{result.TraditionalMoon.LongitudeArcMinutes:0.#####} arcminutes (ព្រះចន្ទ!B43)");
-        _resultGrid.Rows.Add("Planetary positions", result.Planets.Count == 0
-            ? "No planetary positions returned."
-            : $"{result.Planets.Count} workbook-derived positions calculated.");
-        _resultGrid.Rows.Add("Interpretations", $"{result.Interpretations.Count} workbook house interpretations generated.");
-        _resultGrid.Rows.Add("Additional workbook points", $"{result.AdditionalPoints.Count} traditional outer-point positions calculated.");
-        _planetGrid.Rows.Clear();
-        AddPlanetRow(result.Ascendant);
-        foreach (var planet in result.Planets)
+        var country = LocalizeChoice(CountryChoices, input.Country);
+        if (string.IsNullOrWhiteSpace(input.Province))
         {
-            AddPlanetRow(planet);
+            return (country, Localize("International location", "ទីតាំងអន្តរជាតិ"));
         }
-        _d1Chart.Chart = result.D1;
-        _d3Chart.Chart = result.D3;
-        _d9Chart.Chart = result.D9;
-        PopulateNakshatraGrid(result);
-        PopulateCalendarGrid(calendar);
-        _interpretationTextBox.Text = BuildInterpretationText(result);
-        _resultGrid.ClearSelection();
-        _resultGrid.FirstDisplayedScrollingRowIndex = 0;
-        _planetGrid.ClearSelection();
-        _planetGrid.FirstDisplayedScrollingRowIndex = 0;
 
-        if (_tabs is not null && _resultTab is not null)
+        var knownLocation = _locationComboBox.Items
+            .OfType<AstrologyLocation>()
+            .FirstOrDefault(location => string.Equals(location.NameEn, input.Province, StringComparison.Ordinal));
+        return (country, knownLocation is null ? input.Province : Localize(knownLocation.NameEn, knownLocation.NameKm));
+    }
+
+    private string LocalizeChoice((string English, string Khmer)[] choices, string value)
+    {
+        foreach (var choice in choices)
         {
-            _tabs.SelectedTab = _resultTab;
+            if (string.Equals(choice.English, value, StringComparison.Ordinal))
+            {
+                return Localize(choice.English, choice.Khmer);
+            }
+        }
+        return value;
+    }
+
+    private void RelocalizeChoiceComboBox(ComboBox comboBox, (string English, string Khmer)[] choices)
+    {
+        var selectedIndex = comboBox.SelectedIndex;
+        _isRelocalizingChoices = true;
+        comboBox.BeginUpdate();
+        try
+        {
+            comboBox.Items.Clear();
+            comboBox.Items.AddRange(choices.Select(choice => (object)Localize(choice.English, choice.Khmer)).ToArray());
+            comboBox.SelectedIndex = selectedIndex;
+        }
+        finally
+        {
+            comboBox.EndUpdate();
+            _isRelocalizingChoices = false;
         }
     }
 
@@ -2970,27 +3124,7 @@ public sealed class MainForm : Form
         _nakshatraGrid.ClearSelection();
     }
 
-    private void PopulateNakshatraGridLegacy(KhmerAstrology.Application.DTOs.AstrologyResult result)
-    {
-        _nakshatraGrid.Rows.Clear();
-        AddNakshatraRow(result.Ascendant);
-        foreach (var planet in result.Planets)
-        {
-            AddNakshatraRow(planet);
-        }
-        _nakshatraGrid.ClearSelection();
-    }
-
     private void AddNakshatraRow(PlanetPosition position)
-    {
-        _nakshatraGrid.Rows.Add(
-            GetBodyDisplayName(position.Body),
-            position.LongitudeArcMinutes.ToString("0.######", CultureInfo.InvariantCulture),
-            $"{position.NakshatraName} / {position.NakshatraNumber}",
-            position.Pada);
-    }
-
-    private void AddNakshatraRowLegacy(PlanetPosition position)
     {
         _nakshatraGrid.Rows.Add(
             GetBodyDisplayName(position.Body),
@@ -3153,65 +3287,26 @@ public sealed class MainForm : Form
         return $"{day} {monthName} {enYearStr} — {time:hh\\:mm\\:ss}";
     }
 
-    private void PopulateCalendarGridLegacy(KhmerCalendarResult calendar)
-    {
-        _calendarGrid.Rows.Clear();
-        _calendarGrid.Rows.Add("Astronomical year", calendar.AstronomicalYear);
-        _calendarGrid.Rows.Add("Khmer year", calendar.KhmerYear);
-        _calendarGrid.Rows.Add("Buddhist year", calendar.BuddhistYear);
-        _calendarGrid.Rows.Add("Weekday", calendar.Weekday);
-        if (!string.IsNullOrWhiteSpace(calendar.TraditionalDate))
-        {
-            _calendarGrid.Rows.Add("Traditional date", calendar.TraditionalDate);
-            _calendarGrid.Rows.Add("Lunar day / phase", $"{calendar.LunarDayDisplay} — {calendar.TithiName}");
-            _calendarGrid.Rows.Add("Lunar month", $"{calendar.LunarMonthNameEn} ({calendar.LunarMonthNumber})");
-            _calendarGrid.Rows.Add("Animal year", calendar.AnimalYear);
-            _calendarGrid.Rows.Add("Sesa-Kala-Yoga / Yuga", $"{calendar.SesaKalaYoga} / {calendar.Yuga}");
-        }
-        _calendarGrid.Rows.Add("Ahargana", calendar.Ahargana.ToString("0.##########", CultureInfo.InvariantCulture));
-        _calendarGrid.Rows.Add("Ahargana day", calendar.AharganaDay);
-        _calendarGrid.Rows.Add("Kammaja", calendar.Kammaja.ToString("0.##########", CultureInfo.InvariantCulture));
-        _calendarGrid.Rows.Add("Year type", $"{calendar.YearType} ({calendar.DaysInYear} days)");
-        _calendarGrid.Rows.Add("Lunar year type", calendar.LunarYearType);
-        _calendarGrid.Rows.Add("Avamana / Masakendra / Bori Tithi", $"{calendar.Avamana} / {calendar.Masakendra} / {calendar.BoriTithi}");
-        _calendarGrid.Rows.Add("New Era weekday", calendar.NewEraWeekday);
-        _calendarGrid.Rows.Add("Maha Sankranta", $"Day {calendar.MahaSankrantaDay}, {calendar.MahaSankrantaTime:hh\\:mm\\:ss}");
-        _calendarGrid.Rows.Add("Next Maha Sankranta", $"Day {calendar.NextMahaSankrantaDay}, {calendar.NextMahaSankrantaTime:hh\\:mm\\:ss} ({calendar.NextMahaSankrantaWeekday})");
-        _calendarGrid.ClearSelection();
-    }
-
     private string BuildInterpretationText(KhmerAstrology.Application.DTOs.AstrologyResult result)
     {
         var ascendantSign = Localize(result.Ascendant.SignNameEn, result.Ascendant.SignNameKm);
         var header = $"{Localize("Workbook-backed interpretation for", "ការបកស្រាយផ្អែកលើសៀវភៅការងារសម្រាប់")} {result.BirthInput.Name}\r\n" +
                      $"{Localize("Ascendant", "លគ្គនៈ")}: {ascendantSign}\r\n\r\n";
         var entries = result.Interpretations.Select(interpretation =>
-            $"{GetBodyDisplayName(interpretation.Body)} — {Localize("House", "ឋាន")} {interpretation.House}\r\n" +
-            $"{interpretation.Description}\r\n" +
-            $"{Localize("Source", "ប្រភព")}: {interpretation.Source}");
+        {
+            var houseName = string.IsNullOrWhiteSpace(interpretation.HouseNameKm)
+                ? string.Empty
+                : $" ({interpretation.HouseNameKm})";
+            var bodyMeaning = string.IsNullOrWhiteSpace(interpretation.BodyMeaningKm)
+                ? string.Empty
+                : $"{Localize("Planet signifies", "អត្ថន័យតារាគ្រោះ")}: {interpretation.BodyMeaningKm}\r\n";
+            return $"{GetBodyDisplayName(interpretation.Body)} — {Localize("House", "ឋាន")} {interpretation.House}{houseName}\r\n" +
+                   bodyMeaning +
+                   $"{Localize("House signifies", "អត្ថន័យឋាន")}: {interpretation.Description}\r\n" +
+                   $"{Localize("Source", "ប្រភព")}: {interpretation.Source}";
+        });
         return header + string.Join("\r\n\r\n", entries);
     }
-
-    private string BuildInterpretationTextLegacy(KhmerAstrology.Application.DTOs.AstrologyResult result)
-    {
-        var header = $"Workbook-backed interpretation for {result.BirthInput.Name}\r\n" +
-                     $"Ascendant: {result.Ascendant.SignNameEn} / {result.Ascendant.SignNameKm}\r\n\r\n";
-        var entries = result.Interpretations.Select(interpretation =>
-            $"{GetBodyDisplayName(interpretation.Body)} — House {interpretation.House}\r\n" +
-            $"{interpretation.Description}\r\n" +
-            $"Source: {interpretation.Source}");
-        return header + string.Join("\r\n\r\n", entries);
-    }
-
-    private static string GetBodyDisplayNameLegacy(CelestialBody body) => body switch
-    {
-        CelestialBody.KetuVeda => "Ketu Veda / កេតុវេទ",
-        CelestialBody.KetuDivya => "Ketu Divya / កេតុទិព្វ",
-        CelestialBody.Mrityu => "Mrityu / ម្រឹត្យូវ",
-        CelestialBody.Varuna => "Varuna / ព្រះវរុណ",
-        CelestialBody.Yama => "Yama / ព្រះយម",
-        _ => body.ToString(),
-    };
 
     private string GetBodyDisplayName(CelestialBody body) => IsKhmer
         ? body switch
