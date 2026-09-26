@@ -41,6 +41,9 @@
     <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\interpretations.json"
           Link="Data\interpretations.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\celestial-bodies.json"
+          Link="Data\celestial-bodies.json"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\KhmerAstrology.Infrastructure\Data\traditional-outer-points.json"
           Link="Data\traditional-outer-points.json"
           CopyToOutputDirectory="PreserveNewest" />

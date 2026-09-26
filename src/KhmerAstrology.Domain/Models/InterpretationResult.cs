@@ -7,4 +7,6 @@ public sealed record InterpretationResult(
     int House,
     string Title,
     string Description,
-    string Source);
+    string Source,
+    string HouseNameKm = "",
+    string BodyMeaningKm = "");

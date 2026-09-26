@@ -107,7 +107,7 @@ public sealed class ProductionCalculationPathTests
             new D1Calculator(normalizer),
             new D3Calculator(normalizer),
             new D9Calculator(normalizer),
-            new InterpretationService(new JsonInterpretationReferenceDataSource()),
+            new InterpretationService(new JsonInterpretationReferenceDataSource(), new JsonCelestialBodyReferenceDataSource()),
             new TraditionalOuterPointCalculator(new JsonTraditionalOuterPointReferenceDataSource()));
     }
 }

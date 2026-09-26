@@ -86,6 +86,7 @@ internal static class Program
         services.AddSingleton<INakshatraReferenceDataSource, JsonNakshatraReferenceDataSource>();
         services.AddSingleton<ITraditionalOuterPointReferenceDataSource, JsonTraditionalOuterPointReferenceDataSource>();
         services.AddSingleton<IInterpretationReferenceDataSource, JsonInterpretationReferenceDataSource>();
+        services.AddSingleton<ICelestialBodyReferenceDataSource, JsonCelestialBodyReferenceDataSource>();
         services.AddSingleton<IInterpretationService, InterpretationService>();
         services.AddTransient<MainForm>();
     }

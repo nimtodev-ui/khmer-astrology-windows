@@ -170,7 +170,7 @@ public sealed class HoroscopeChartControl : UserControl
         DrawCenteredText(e.Graphics, _chart.ChartType.ToString(), chartBrush, chartFont, center);
     }
 
-    private static void DrawPlacementLabels(
+    private void DrawPlacementLabels(
         Graphics graphics,
         IReadOnlyList<AstrologyChartPlacement> placements,
         PointF center,
@@ -185,7 +185,7 @@ public sealed class HoroscopeChartControl : UserControl
         }
 
         var labels = placements
-            .Select(placement => (placement, label: FormatPlacement(placement)))
+            .Select(placement => (placement, label: _isKhmer ? FormatPlacementKhmer(placement) : FormatPlacement(placement)))
             .ToArray();
         var lineHeight = Math.Max(font.GetHeight(graphics) * 0.92F, 11F);
         var firstLineY = center.Y - (labels.Length - 1) * lineHeight / 2F;
@@ -265,5 +265,26 @@ public sealed class HoroscopeChartControl : UserControl
         CelestialBody.Varuna => "Va",
         CelestialBody.Yama => "Ya",
         _ => placement.Body.ToString()[..Math.Min(2, placement.Body.ToString().Length)],
+    };
+
+    // Planet codes from the workbook sheet `រាសិចក្ក D1-D9-D3` (A5:A18). That sheet
+    // codes the សូរ្យយាត្រ!B28:B30 rows (Uranus/Neptune/Pluto here) as ០/វ/យ; the
+    // separate traditional Mrityu/Varuna/Yama points keep Latin abbreviations.
+    private static string FormatPlacementKhmer(AstrologyChartPlacement placement) => placement.Body switch
+    {
+        CelestialBody.Ascendant => "ល",
+        CelestialBody.Sun => "១",
+        CelestialBody.Moon => "២",
+        CelestialBody.Mars => "៣",
+        CelestialBody.Mercury => "៤",
+        CelestialBody.Jupiter => "៥",
+        CelestialBody.Venus => "៦",
+        CelestialBody.Saturn => "៧",
+        CelestialBody.Rahu => "៨",
+        CelestialBody.Ketu or CelestialBody.KetuVeda or CelestialBody.KetuDivya => "៩",
+        CelestialBody.Uranus => "០",
+        CelestialBody.Neptune => "វ",
+        CelestialBody.Pluto => "យ",
+        _ => FormatPlacement(placement),
     };
 }

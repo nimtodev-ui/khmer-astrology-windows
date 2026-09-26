@@ -1,0 +1,20 @@
+{
+  "status": "workbook-backed",
+  "sourceSheet": "សរុបតារាគ្រោះ",
+  "source": "ប្រភព៖ «សរុបតារាគ្រោះនិងឆាយាគ្រោះទាំង ១៣.docx» ដែលបានផ្តល់បន្ថែម",
+  "bodies": [
+    {"bodies": ["Sun"], "nameKm": "ព្រះអាទិត្យ", "categoryKm": "តារាគ្រោះ", "code": "១", "internationalName": "Sun", "cycleKm": "៣៦៥ ថ្ងៃ ៥ ម៉ោង ៤៨ នាទី ៤៦ វិនាទី", "motionKm": "—", "meaningKm": "ពន្លឺ អំណាច តេជានុភាព សេចក្តីក្លាហាន អ្នកដឹកនាំ ថាមពលជីវិត"},
+    {"bodies": ["Moon"], "nameKm": "ព្រះចន្ទ", "categoryKm": "តារាគ្រោះ", "code": "២", "internationalName": "Moon", "cycleKm": "ប្រមាណ ២៧.៣ ថ្ងៃ", "motionKm": "—", "meaningKm": "អារម្មណ៍ សេចក្តីស្ងប់ ភាពជាម្តាយ; បញ្ជាទឹកសមុទ្រឱ្យជោរនាច"},
+    {"bodies": ["Mars"], "nameKm": "ព្រះអង្គារ", "categoryKm": "តារាគ្រោះ", "code": "៣", "internationalName": "Mars", "cycleKm": "ប្រមាណ ៦៨៧ ថ្ងៃ", "motionKm": "—", "meaningKm": "កម្លាំង ថាមពលសកម្ម ភាពក្លាហាន សង្គ្រាម"},
+    {"bodies": ["Mercury"], "nameKm": "ព្រះពុធ", "categoryKm": "តារាគ្រោះ", "code": "៤", "internationalName": "Mercury", "cycleKm": "ប្រមាណ ៨៨ ថ្ងៃ", "motionKm": "—", "meaningKm": "បញ្ញាស្មារតី ការទំនាក់ទំនង ការវិនិច្ឆ័យ"},
+    {"bodies": ["Jupiter"], "nameKm": "ព្រះព្រហស្បតិ៍", "categoryKm": "តារាគ្រោះ", "code": "៥", "internationalName": "Jupiter", "cycleKm": "១១.៨៦ ឆ្នាំ / ៤៣៣១ ថ្ងៃ ២៣ ម៉ោង ១៥ នាទី ២ វិនាទី", "motionKm": "—", "meaningKm": "ប្រាជ្ញាញាណ គុណធម៌ គ្រូបាធ្យាយ ការការពារ"},
+    {"bodies": ["Venus"], "nameKm": "ព្រះសុក្រ", "categoryKm": "តារាគ្រោះ", "code": "៦", "internationalName": "Venus", "cycleKm": "២២៥ ថ្ងៃ", "motionKm": "—", "meaningKm": "សោភ័ណភាព សិល្បៈ សេចក្តីស្រលាញ់ សេចក្តីសុខ"},
+    {"bodies": ["Saturn"], "nameKm": "ព្រះសៅរ៍", "categoryKm": "តារាគ្រោះ", "code": "៧", "internationalName": "Saturn", "cycleKm": "២៩.៤៥ ឆ្នាំ / ១០៧៥៦ ថ្ងៃ ២០ ម៉ោង ៥២ នាទី ៤៧ វិនាទី", "motionKm": "—", "meaningKm": "ពេលវេលា កម្មផល វិន័យ សេចក្តីអត់ធ្មត់"},
+    {"bodies": ["Rahu"], "nameKm": "រាហូ", "categoryKm": "ឆាយាគ្រោះ", "code": "៨", "internationalName": "North Lunar Node", "cycleKm": "១៨.៦ ឆ្នាំ / ៦៧៩៣ ថ្ងៃ ១៩ ម៉ោង ៣០ នាទី ២២ វិនាទី", "motionKm": "ថយក្រោយ", "meaningKm": "ចំណង់ និងភាពស្រពិចស្រពិល"},
+    {"bodies": ["KetuVeda", "Ketu"], "nameKm": "ព្រះកេតុវេទ", "categoryKm": "ឆាយាគ្រោះ", "code": "៩", "internationalName": "South Lunar Node", "cycleKm": "១៨.៦ ឆ្នាំ / ៦៧៩៣ ថ្ងៃ ១៩ ម៉ោង ៣០ នាទី ២២ វិនាទី", "motionKm": "ថយក្រោយ; ទល់មុខរាហូ ១៨០°", "meaningKm": "អតីតជាតិ កម្មផល ការរំដោះខ្លួន/មោក្ខធម៌"},
+    {"bodies": ["KetuDivya"], "nameKm": "ព្រះកេតុទិព្វ", "categoryKm": "ឆាយាគ្រោះ", "code": "៩", "internationalName": "គ្មានឈ្មោះអន្តរជាតិ", "cycleKm": "៦៧៩ ថ្ងៃ", "motionKm": "ថយក្រោយ", "meaningKm": "រលកថាមពលម៉ាញេទិកកម្រិតខ្ពស់; ចលនាឯករាជ្យពីកេតុវេទ"},
+    {"bodies": ["Mrityu", "Uranus"], "nameKm": "ម្រឹត្យូវ", "categoryKm": "តារាគ្រោះ", "code": "០", "internationalName": "Uranus", "cycleKm": "៨៤ ឆ្នាំ / ៣០៦៨១ ថ្ងៃ ១៧ ម៉ោង ៣៨ នាទី ២៤ វិនាទី", "motionKm": "—", "meaningKm": "ការផ្លាស់ប្តូរ ការភ្ញាក់ផ្អើល នវានុវត្តន៍"},
+    {"bodies": ["Varuna", "Neptune"], "nameKm": "ព្រះវរុណ", "categoryKm": "តារាគ្រោះ", "code": "វ", "internationalName": "Neptune", "cycleKm": "១៦៥ ឆ្នាំ / ៦០២៦៧ ថ្ងៃ ១៦ ម៉ោង ៣៩ នាទី", "motionKm": "—", "meaningKm": "មហាសមុទ្រនៃចក្រវាល វិចារណញ្ញាណ ក្តីសុបិន អាថ៌កំបាំង"},
+    {"bodies": ["Yama", "Pluto"], "nameKm": "ព្រះយម", "categoryKm": "តារាគ្រោះ", "code": "យ", "internationalName": "Pluto", "cycleKm": "២៤៨ ឆ្នាំ / ៩០៥៨៤ ថ្ងៃ ៤ ម៉ោង ៤ នាទី ៤៨ វិនាទី", "motionKm": "—", "meaningKm": "ការរំលាយ និងការកើតថ្មី; ថាមពលលាក់កំបាំងនៃការបញ្ចប់អតីតកាល"}
+  ]
+}

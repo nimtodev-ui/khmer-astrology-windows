@@ -25,7 +25,7 @@ The current authoritative reference is the attached Khmer workbook named above. 
 |---:|---|---|---:|---|---|
 | 1 | `អដ្ឋភុជ្ជ` | `A1:J47` | 38 | Suriyayātra/Atthabhujja calendar bridge, Ahargana, Kammaja, Maha Sankranta display | `KhmerAstrology.Calculation.Calendar` in a later phase |
 | 2 | `សូរ្យយាត្រ` | `A1:BQ832` | 1,492 | Main input bridge, location selection, planet result table, D1/D9/D3 display fields | Inputs and derived result mapping |
-| 3 | `សរុបតារាគ្រោះ` | `A1:J30` | 0 | Catalog of 13 planets and shadow points, labels and source notes | `CelestialBody` reference |
+| 3 | `សរុបតារាគ្រោះ` | `A1:J30` | 0 | Catalog of 13 planets and shadow points, labels and source notes | `celestial-bodies.json` via `JsonCelestialBodyReferenceDataSource`; meanings used by `InterpretationService` (`InterpretationServiceTests`) |
 | 4 | `ព្រះអាទិត្យ` | `A1:H61` | 28 | Sun calculation chain: mean, mandakendra, mandaphala, sphuta | Future `SolarCalculator` |
 | 5 | `ព្រះចន្ទ` | `A1:D59` | 38 | Moon calculation chain: mean Moon, apogee, correction, sphuta | Future `LunarCalculator` |
 | 6 | `ព្រះអង្គារ` | `A1:I103` | 70 | Mars Suriyayātra calculation chain | Future `PlanetaryCalculator` |
@@ -36,7 +36,7 @@ The current authoritative reference is the attached Khmer workbook named above. 
 | 11 | `ក្បួនគណនា` | `A1:KF180` | 1,634 | Calculation core, longitude tables, time-zone calculations and final source longitudes | Future calculation engine; do not copy into Forms |
 | 12 | `ទិន្នន័យរាសី` | `A1:D13` | 0 | Zodiac reference table, Khmer names, intercalary/time-unit fields | `ZodiacCalculator` reference |
 | 13 | `ទិន្នន័យនក្ខត្តឫក្ស` | `A1:C28` | 0 | 27 Nakshatra names and start arcminutes | `NakshatraCalculator` reference |
-| 14 | `ទិន្នន័យឋានៈ` | `A1:E15` | 0 | Planet dignity/status lookup | Future interpretation data |
+| 14 | `ទិន្នន័យឋានៈ` | `A1:E15` | 0 | Planet dignity/status lookup | Not migrated: B2:D15 are empty and E2:E15 read "ត្រូវផ្ទៀងផ្ទាត់តាមគម្ពីរ" in the attached workbook |
 | 15 | `ទិន្នន័យព្យាករ` | `A1:D13` | 0 | House names and interpretation text | Future `InterpretationService` |
 | 16 | `ទីតាំងកម្ពុជា` | `A1:H26` | 0 | 25 Cambodian location rows with latitude, longitude, UTC and Khmer display names | Infrastructure reference data |
 | 17 | `ពេលវេលាព្រះអាទិត្យ` | `A1:G865` | 0 | Sunrise, solar noon and sunset lookup table | Future location/solar service |
