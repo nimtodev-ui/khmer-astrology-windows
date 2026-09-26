@@ -27,4 +27,7 @@ public sealed class AstrologyChartPlacement
     public CelestialBody Body { get; init; }
 
     public string DisplayName { get; init; } = string.Empty;
+
+    /// <summary>Sidereal D1 longitude of the body, used for detail display.</summary>
+    public double LongitudeArcMinutes { get; init; }
 }

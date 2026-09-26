@@ -138,6 +138,7 @@ public sealed class AstrologyCalculationService : IAstrologyCalculationService
             {
                 Body = position.Body,
                 DisplayName = position.Body == CelestialBody.Ascendant ? "Asc" : position.Body.ToString(),
+                LongitudeArcMinutes = position.LongitudeArcMinutes,
             });
             houses[houseNumber - 1] = new AstrologyChartHouse
             {

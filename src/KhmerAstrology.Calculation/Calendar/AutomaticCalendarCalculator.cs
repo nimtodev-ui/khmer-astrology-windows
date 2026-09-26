@@ -34,9 +34,10 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
         "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
     ];
 
+    // Exact strings from sheet 30 K6 / sheet 31 B16 (CHOOSE list).
     private static readonly string[] TithiNames =
     [
-        "នន្ទាតិថី", "ភទ្រាតិថី", "ជយាតិថី", "រិក្តាតិថី", "បូណ៌ាតិថី"
+        "នន្ទតិថី", "ភទ្រតិថី", "ជយតិថី", "រិក្តតិថី", "បូណ៌តិថី"
     ];
 
     private static readonly string[] LunarMonths12 =
@@ -213,11 +214,11 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
             string tithiName;
             if (u == 15)
             {
-                tithiName = "ពេញបូណ៌មី";
+                tithiName = AutomaticCalendarMonthSummary.FullMoonTithi;
             }
             else if (u is 29 or 30)
             {
-                tithiName = "អមាវាសី";
+                tithiName = AutomaticCalendarMonthSummary.NewMoonTithi;
             }
             else
             {

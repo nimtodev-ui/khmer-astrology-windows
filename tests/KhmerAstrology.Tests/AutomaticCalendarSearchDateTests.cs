@@ -32,7 +32,7 @@ public sealed class AutomaticCalendarSearchDateTests
         // Section 2: Lunar / ចន្ទគតិ
         Assert.Equal("សៅរ៍", result.LunarWeekday);
         Assert.Equal("១០ រោច", result.LunarDay);
-        Assert.Equal("បូណ៌ាតិថី", result.TithiName);
+        Assert.Equal("បូណ៌តិថី", result.TithiName);
         Assert.Equal("ខែមិគសិរ", result.LunarMonth);
         Assert.Equal("ថោះ", result.AnimalYear);
 
@@ -69,7 +69,7 @@ public sealed class AutomaticCalendarSearchDateTests
         // Section 2: Lunar / ចន្ទគតិ
         Assert.Equal("សៅរ៍", result.LunarWeekday);
         Assert.Equal("៥ រោច", result.LunarDay);
-        Assert.Equal("បូណ៌ាតិថី", result.TithiName);
+        Assert.Equal("បូណ៌តិថី", result.TithiName);
         Assert.Equal("ខែទុតិយាសាឍ", result.LunarMonth);
         Assert.Equal("រកា", result.AnimalYear);
 
@@ -105,7 +105,7 @@ public sealed class AutomaticCalendarSearchDateTests
         // Section 2: Lunar / ចន្ទគតិ
         Assert.Equal("ពុធ", result.LunarWeekday);
         Assert.Equal("៥ កើត", result.LunarDay);
-        Assert.Equal("បូណ៌ាតិថី", result.TithiName);
+        Assert.Equal("បូណ៌តិថី", result.TithiName);
         Assert.Equal("ខែភទ្របទ", result.LunarMonth);
         Assert.Equal("មមី", result.AnimalYear);
 

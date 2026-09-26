@@ -31,7 +31,7 @@ public sealed class AutomaticCalendarCalculatorTests
         Assert.Equal(1389, d1.ChulaSakaraj);
         Assert.Equal(5128, d1.KromSakaraj);
         Assert.Equal("១ កើត", d1.LunarDay);
-        Assert.Equal("នន្ទាតិថី", d1.TithiName);
+        Assert.Equal("នន្ទតិថី", d1.TithiName);
         Assert.Equal("ខែភទ្របទ", d1.LunarMonth);
         Assert.Equal("មមែ", d1.AnimalYear);
         Assert.Equal(3, d1.SesaKalaYoga);
@@ -51,21 +51,21 @@ public sealed class AutomaticCalendarCalculatorTests
         Assert.Equal(16, d16.Day);
         Assert.Equal("ព្រហស្បតិ៍", d16.Weekday);
         Assert.Equal("១ រោច", d16.LunarDay);
-        Assert.Equal("នន្ទាតិថី", d16.TithiName);
+        Assert.Equal("នន្ទតិថី", d16.TithiName);
 
         // Day 29 (14th Waning / Amavasya)
         var d29 = result.Days[28];
         Assert.Equal(29, d29.Day);
         Assert.Equal("ពុធ", d29.Weekday);
         Assert.Equal("១៤ រោច", d29.LunarDay);
-        Assert.Equal("អមាវាសី", d29.TithiName);
+        Assert.Equal("អមាវសី", d29.TithiName);
 
         // Day 30 (15th Waning / Amavasya)
         var d30 = result.Days[29];
         Assert.Equal(30, d30.Day);
         Assert.Equal("ព្រហស្បតិ៍", d30.Weekday);
         Assert.Equal("១៥ រោច", d30.LunarDay);
-        Assert.Equal("អមាវាសី", d30.TithiName);
+        Assert.Equal("អមាវសី", d30.TithiName);
     }
 
     [Fact]

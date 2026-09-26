@@ -28,6 +28,7 @@ public sealed class MainForm : Form
     private readonly ILocationReferenceDataSource _locationReferenceDataSource;
     private readonly UiFontProvider _fontProvider;
     private readonly ErrorProvider _errorProvider = new();
+    private readonly ToolTip _toolTip = new();
     private readonly TextBox _nameTextBox = new();
     private readonly ComboBox _genderComboBox = new();
     private readonly DateTimePicker _birthDatePicker = new();
@@ -57,7 +58,25 @@ public sealed class MainForm : Form
     private readonly ComboBox _autoCalendarMonthComboBox = new();
     private readonly Button _calculateAutoCalendarButton = new();
     private readonly Button _autoCalendarTodayButton = new();
-    private readonly DataGridView _autoCalendarGrid = new();
+    private readonly HorizontalScrollDataGridView _autoCalendarGrid = new();
+    private readonly Button _autoCalendarCompactButton = new();
+    private readonly Button _autoCalendarAllColumnsButton = new();
+    private readonly Label _autoCalendarSummaryLabel = new();
+    private int? _autoCalendarPendingRevealRow;
+    private Font? _autoCalendarBoldFont;
+
+    private static readonly Color AutoCalendarTodayColor = Color.FromArgb(255, 238, 186);
+    private static readonly Color AutoCalendarFullMoonColor = Color.FromArgb(255, 250, 228);
+    private static readonly Color AutoCalendarNewMoonColor = Color.FromArgb(232, 236, 244);
+
+    // Sheet 30 columns shown in the compact view; the rest repeat per month and
+    // are summarised in the card above the grid.
+    private static readonly HashSet<string> AutomaticCalendarCompactColumns =
+        ["no", "weekday", "day", "lunarDay", "tithiName", "lunarMonth"];
+
+    // Sheet 30 weekday names (B6 CHOOSE order: Sunday first).
+    private static readonly string[] KhmerWeekdayNames =
+        ["អាទិត្យ", "ចន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
     private readonly ComboBox _searchDateDayComboBox = new();
     private readonly ComboBox _searchDateMonthComboBox = new();
     private readonly TextBox _searchDateYearTextBox = new();
@@ -68,6 +87,24 @@ public sealed class MainForm : Form
     private readonly HoroscopeChartControl _d1Chart = new();
     private readonly HoroscopeChartControl _d3Chart = new();
     private readonly HoroscopeChartControl _d9Chart = new();
+    private readonly Button[] _chartViewButtons = [new(), new(), new(), new()];
+    private readonly Label _chartLegendLabel = new();
+    private readonly List<Control> _chartCards = [];
+    private TableLayoutPanel? _chartGrid;
+    private readonly HorizontalScrollDataGridView _divisionalGrid = new();
+    private Control? _divisionalCard;
+    private Font? _divisionalSelectedFont;
+    private int _chartView;
+
+    // Bodies in legend order; bodies sharing a code are listed together.
+    private static readonly CelestialBody[] ChartLegendBodies =
+    [
+        CelestialBody.Ascendant, CelestialBody.Sun, CelestialBody.Moon, CelestialBody.Mars,
+        CelestialBody.Mercury, CelestialBody.Jupiter, CelestialBody.Venus, CelestialBody.Saturn,
+        CelestialBody.Rahu, CelestialBody.KetuVeda, CelestialBody.KetuDivya, CelestialBody.Uranus,
+        CelestialBody.Neptune, CelestialBody.Pluto, CelestialBody.Mrityu, CelestialBody.Varuna,
+        CelestialBody.Yama,
+    ];
     private readonly TextBox _interpretationTextBox = new();
     private readonly Button _calculateButton = new();
     private readonly Label _resultTitleLabel = new();
@@ -374,22 +411,246 @@ public sealed class MainForm : Form
 
     private Control BuildChartsPanel()
     {
-        var layout = new TableLayoutPanel
+        var root = new TableLayoutPanel
         {
-            ColumnCount = 3,
+            ColumnCount = 1,
             Dock = DockStyle.Fill,
-            Padding = new Padding(0, 8, 0, 0),
+            RowCount = 3,
+        };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        // View switch, mirroring the workbook's "Selected Divisional Chart" choice.
+        var toolbar = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(5, 4, 5, 6),
+            WrapContents = false,
+        };
+        var viewLabel = new Label
+        {
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(9F, FontStyle.Bold),
+            ForeColor = TextSecondary,
+            Margin = new Padding(0, 7, 8, 0),
+            Text = "View",
+        };
+        RegisterLocalizedControl(viewLabel, "View", "បង្ហាញ");
+        toolbar.Controls.Add(viewLabel);
+        var viewTexts = new[] { ("All three", "ទាំងបី"), ("D1", "D1"), ("D9", "D9"), ("D3", "D3") };
+        for (var index = 0; index < _chartViewButtons.Length; index++)
+        {
+            var view = index;
+            var button = _chartViewButtons[index];
+            ConfigureSegmentButton(button, viewTexts[index].Item1);
+            RegisterLocalizedControl(button, viewTexts[index].Item1, viewTexts[index].Item2);
+            button.Click += (_, _) => SetChartView(view);
+            toolbar.Controls.Add(button);
+        }
+        var hintLabel = new Label
+        {
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(8.5F),
+            ForeColor = TextSecondary,
+            Margin = new Padding(16, 8, 0, 0),
+            Text = "Hover a house to see full names and D1 positions.",
+        };
+        RegisterLocalizedControl(
+            hintLabel,
+            "Hover a house to see full names and D1 positions.",
+            "ដាក់ម៉ៅស៍លើឋាន ដើម្បីមើលឈ្មោះពេញ និងទីតាំង D1។");
+        toolbar.Controls.Add(hintLabel);
+        root.Controls.Add(toolbar, 0, 0);
+
+        _chartGrid = new TableLayoutPanel
+        {
+            ColumnCount = 4,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
             RowCount = 1,
         };
-        for (var index = 0; index < 3; index++)
+        for (var index = 0; index < 4; index++)
         {
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333F));
+            _chartGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+        }
+        _chartGrid.Controls.Add(BuildChartCard("D1  ·  Rāśi chart", "D1  ·  រាសិចក្ក", _d1Chart), 0, 0);
+        _chartGrid.Controls.Add(BuildChartCard("D9  ·  Navāṃśa chart", "D9  ·  នវាង្សចក្រ", _d9Chart), 1, 0);
+        _chartGrid.Controls.Add(BuildChartCard("D3  ·  Drekkāṇa chart", "D3  ·  ត្រិយាង្សចក្រ", _d3Chart), 2, 0);
+        _divisionalCard = BuildDivisionalTableCard();
+        _chartGrid.Controls.Add(_divisionalCard, 3, 0);
+        root.Controls.Add(_chartGrid, 0, 1);
+
+        var legendTable = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.FromArgb(248, 250, 253),
+            ColumnCount = 1,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(5, 8, 5, 0),
+            Padding = new Padding(10, 6, 10, 6),
+            RowCount = 1,
+        };
+        legendTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        legendTable.Paint += (_, eventArgs) =>
+        {
+            using var pen = new Pen(Border);
+            eventArgs.Graphics.DrawRectangle(pen, 0, 0, legendTable.Width - 1, legendTable.Height - 1);
+        };
+        _chartLegendLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        _chartLegendLabel.AutoSize = true;
+        _chartLegendLabel.Font = _fontProvider.CreateBody(8.5F);
+        _chartLegendLabel.ForeColor = TextLabel;
+        legendTable.Controls.Add(_chartLegendLabel, 0, 0);
+        root.Controls.Add(legendTable, 0, 2);
+
+        SetChartView(0);
+        return root;
+    }
+
+    private void SetChartView(int view)
+    {
+        _chartView = view;
+        if (_chartGrid is not null)
+        {
+            // All three: equal columns. Single chart: chart plus the workbook table.
+            _chartGrid.SuspendLayout();
+            for (var index = 0; index < _chartCards.Count; index++)
+            {
+                var visible = view == 0 || view == index + 1;
+                _chartCards[index].Visible = visible;
+                _chartGrid.ColumnStyles[index] = visible
+                    ? new ColumnStyle(SizeType.Percent, view == 0 ? 33.3333F : 52F)
+                    : new ColumnStyle(SizeType.Absolute, 0F);
+            }
+            _divisionalCard?.Visible = view != 0;
+            _chartGrid.ColumnStyles[3] = view == 0
+                ? new ColumnStyle(SizeType.Absolute, 0F)
+                : new ColumnStyle(SizeType.Percent, 48F);
+            _chartGrid.ResumeLayout(true);
+        }
+        PopulateDivisionalTable();
+
+        for (var index = 0; index < _chartViewButtons.Length; index++)
+        {
+            ApplySegmentState(_chartViewButtons[index], index == view);
+        }
+    }
+
+    private Control BuildDivisionalTableCard()
+    {
+        var group = new GroupBox
+        {
+            Dock = DockStyle.Fill,
+            Font = _fontProvider.CreateBody(10F, FontStyle.Bold),
+            Margin = new Padding(5, 0, 5, 0),
+            Padding = new Padding(8, 26, 8, 8),
+            Text = "Divisional signs  ·  workbook A4:F18",
+        };
+        _localizedControls.Add((group, "Divisional signs  ·  workbook A4:F18", "រាសីតាមចក្រ  ·  សៀវភៅការងារ A4:F18"));
+        ConfigureGrid(_divisionalGrid);
+        _divisionalGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+        _divisionalGrid.ScrollBars = ScrollBars.Both;
+        _divisionalGrid.RowTemplate.Height = 34;
+        _divisionalGrid.ColumnHeadersHeight = 38;
+        AddLocalizedColumn(_divisionalGrid, "code", "Code", "សញ្ញា");
+        AddLocalizedColumn(_divisionalGrid, "body", "Planet / point", "តារាគ្រោះ");
+        AddLocalizedColumn(_divisionalGrid, "d1", "D1", "D1");
+        AddLocalizedColumn(_divisionalGrid, "d9", "D9", "D9");
+        AddLocalizedColumn(_divisionalGrid, "d3", "D3", "D3");
+        AddLocalizedColumn(_divisionalGrid, "house", "House", "ឋាន");
+        int[] widths = [52, 150, 86, 86, 86, 82];
+        for (var index = 0; index < widths.Length; index++)
+        {
+            _divisionalGrid.Columns[index].Width = widths[index];
+            _divisionalGrid.Columns[index].MinimumWidth = widths[index];
+            _divisionalGrid.Columns[index].SortMode = DataGridViewColumnSortMode.NotSortable;
+            _divisionalGrid.Columns[index].DefaultCellStyle.Alignment = index == 1
+                ? DataGridViewContentAlignment.MiddleLeft
+                : DataGridViewContentAlignment.MiddleCenter;
+        }
+        _divisionalGrid.Columns[1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+        foreach (var column in new[] { "code", "d1", "d9", "d3", "house" })
+        {
+            _divisionalGrid.Columns[column]!.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+        }
+        // Highlight the selected chart's column here: the alternating-row style
+        // would otherwise override a column-level BackColor on every other row.
+        _divisionalGrid.CellFormatting += (_, eventArgs) =>
+        {
+            var selectedColumn = _chartView switch { 2 => "d9", 3 => "d3", _ => "d1" };
+            if (eventArgs.ColumnIndex >= 0
+                && eventArgs.CellStyle is not null
+                && _divisionalGrid.Columns[eventArgs.ColumnIndex].Name == selectedColumn)
+            {
+                eventArgs.CellStyle.BackColor = BrandBlueLight;
+                eventArgs.CellStyle.Font = _divisionalSelectedFont ??= _fontProvider.CreateBody(9.5F, FontStyle.Bold);
+            }
+        };
+        group.Controls.Add(_divisionalGrid);
+        return group;
+    }
+
+    /// <summary>
+    /// Mirrors the workbook table <c>រាសិចក្ក D1-D9-D3!A4:F18</c>: each body's sign
+    /// in D1/D9/D3 plus its house in the chart selected by the view switch.
+    /// </summary>
+    private void PopulateDivisionalTable()
+    {
+        _divisionalGrid.Rows.Clear();
+        if (_lastResult is null)
+        {
+            return;
         }
 
-        layout.Controls.Add(BuildChartCard("D1  ·  Rāśi chart", "D1  ·  រាសិចក្ក", _d1Chart), 0, 0);
-        layout.Controls.Add(BuildChartCard("D9  ·  Navāṃśa chart", "D9  ·  នវម្ស", _d9Chart), 1, 0);
-        layout.Controls.Add(BuildChartCard("D3  ·  Drekkāṇa chart", "D3  ·  ទ្រេកាណ", _d3Chart), 2, 0);
-        return layout;
+        var selectedChart = _chartView switch
+        {
+            2 => _lastResult.D9,
+            3 => _lastResult.D3,
+            _ => _lastResult.D1,
+        };
+        _divisionalGrid.Columns["house"]!.HeaderText = $"{Localize("House", "ឋាន")} ({selectedChart.ChartType})";
+        var bodies = new[] { _lastResult.Ascendant }
+            .Concat(_lastResult.Planets)
+            .Concat(_lastResult.AdditionalPoints)
+            .Select(position => position.Body);
+        foreach (var body in bodies)
+        {
+            var selectedHouse = FindChartHouse(selectedChart, body);
+            _divisionalGrid.Rows.Add(
+                HoroscopeChartControl.GetPlacementCode(body, IsKhmer),
+                CelestialBodyNames.Get(body, IsKhmer),
+                FormatChartSign(_lastResult.D1, body),
+                FormatChartSign(_lastResult.D9, body),
+                FormatChartSign(_lastResult.D3, body),
+                selectedHouse is null ? "—" : IsKhmer ? ToKhmerDigits(selectedHouse.HouseNumber) : selectedHouse.HouseNumber.ToString(CultureInfo.InvariantCulture));
+        }
+
+        _divisionalGrid.ClearSelection();
+    }
+
+    private static AstrologyChartHouse? FindChartHouse(AstrologyChart chart, CelestialBody body) =>
+        chart.Houses.FirstOrDefault(house => house.Placements.Any(placement => placement.Body == body));
+
+    private string FormatChartSign(AstrologyChart chart, CelestialBody body)
+    {
+        var house = FindChartHouse(chart, body);
+        return house is null ? "—" : Localize(house.SignNameEn, house.SignNameKm);
+    }
+
+    private void UpdateChartLegend()
+    {
+        var entries = ChartLegendBodies
+            .GroupBy(body => HoroscopeChartControl.GetPlacementCode(body, IsKhmer))
+            .Select(group => $"{group.Key} = {string.Join(" / ", group.Select(body => CelestialBodyNames.Get(body, IsKhmer)))}");
+        var houseNote = Localize(
+            "Small numbers are houses; house 1 (Lagna) is tinted.",
+            "លេខតូចៗ ជាលេខឋាន; ឋានទី ១ (លគ្នា) មានពណ៌ដាច់ដោយឡែក។");
+        _chartLegendLabel.Text = $"{Localize("Legend", "សញ្ញា")}:  {string.Join("   ·   ", entries)}\r\n{houseNote}";
     }
 
     private Control BuildChartCard(string title, string khmerTitle, HoroscopeChartControl chart)
@@ -404,6 +665,7 @@ public sealed class MainForm : Form
         };
         _localizedControls.Add((group, title, khmerTitle));
         group.Controls.Add(chart);
+        _chartCards.Add(group);
         return group;
     }
 
@@ -956,20 +1218,13 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             Dock = DockStyle.Fill,
             Padding = new Padding(8),
-            RowCount = 2,
+            RowCount = 4,
         };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        var header = new TableLayoutPanel
-        {
-            ColumnCount = 1,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 8),
-            RowCount = 2,
-        };
-        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var title = new Label
         {
@@ -980,37 +1235,62 @@ public sealed class MainForm : Form
             Text = "Suriyayātra Automatic Calendar",
         };
         RegisterLocalizedControl(title, "Suriyayātra Automatic Calendar", "ប្រតិទិនសូរ្យយាត្រស្វ័យប្រវត្តិ");
-        header.Controls.Add(title, 0, 0);
+        root.Controls.Add(title, 0, 0);
 
         var bar = new FlowLayoutPanel
         {
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = Color.FromArgb(238, 246, 237),
-            BorderStyle = BorderStyle.None,
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0, 4, 0, 0),
+            Margin = new Padding(0, 0, 0, 8),
             Padding = new Padding(10, 8, 10, 8),
             WrapContents = true,
         };
 
-        var yearLabel = new Label
+        Label BarLabel(string english, string khmer, int leftMargin = 0)
         {
-            AutoSize = true,
-            Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold),
-            ForeColor = TextPrimary,
-            Margin = new Padding(0, 5, 4, 0),
-            Text = "Year CE (+) / BCE (−):",
-        };
-        RegisterLocalizedControl(yearLabel, "Year CE (+) / BCE (−):", "ឆ្នាំ គ.ស. (+) / មុន គ.ស. (−)");
+            var label = new Label
+            {
+                AutoSize = true,
+                Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold),
+                ForeColor = TextPrimary,
+                Margin = new Padding(leftMargin, 8, 6, 0),
+                Text = english,
+            };
+            RegisterLocalizedControl(label, english, khmer);
+            return label;
+        }
+
+        Button NavButton(string text, string accessibleName, int delta)
+        {
+            var button = new Button
+            {
+                AccessibleName = accessibleName,
+                Cursor = Cursors.Hand,
+                FlatStyle = FlatStyle.Flat,
+                Font = _fontProvider.CreateBody(10F, FontStyle.Bold),
+                ForeColor = TextPrimary,
+                Margin = new Padding(0, 2, 4, 2),
+                Size = new Size(36, 32),
+                Text = text,
+                UseVisualStyleBackColor = false,
+                BackColor = Surface,
+            };
+            button.FlatAppearance.BorderColor = Border;
+            button.FlatAppearance.MouseOverBackColor = BrandBlueLight;
+            button.Click += (_, _) => StepAutomaticCalendarMonth(delta);
+            return button;
+        }
 
         var today = DateTime.Today;
         _autoCalendarYearTextBox.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
-        _autoCalendarYearTextBox.Margin = new Padding(0, 2, 14, 0);
+        _autoCalendarYearTextBox.Margin = new Padding(0, 4, 14, 0);
         _autoCalendarYearTextBox.Size = new Size(85, 28);
         _autoCalendarYearTextBox.Text = today.Year.ToString(CultureInfo.InvariantCulture);
         _autoCalendarYearTextBox.TextAlign = HorizontalAlignment.Center;
-        _autoCalendarYearTextBox.KeyDown += (s, e) =>
+        _autoCalendarYearTextBox.KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -1019,100 +1299,62 @@ public sealed class MainForm : Form
             }
         };
 
-        var ksLabel = new Label
-        {
-            AutoSize = true,
-            Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold),
-            ForeColor = TextPrimary,
-            Margin = new Padding(0, 5, 4, 0),
-            Text = "K.S. (Auto):",
-        };
-        RegisterLocalizedControl(ksLabel, "K.S. (Auto):", "ក.ស. (Auto)");
-
-        _autoCalendarKsTextBox.BackColor = Color.White;
-        _autoCalendarKsTextBox.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
-        _autoCalendarKsTextBox.ForeColor = Color.FromArgb(30, 90, 45);
-        _autoCalendarKsTextBox.Margin = new Padding(0, 2, 14, 0);
-        _autoCalendarKsTextBox.ReadOnly = true;
-        _autoCalendarKsTextBox.Size = new Size(75, 28);
-        _autoCalendarKsTextBox.Text = (today.Year + 3100).ToString(CultureInfo.InvariantCulture);
-        _autoCalendarKsTextBox.TextAlign = HorizontalAlignment.Center;
-
-        var monthLabel = new Label
-        {
-            AutoSize = true,
-            Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold),
-            ForeColor = TextPrimary,
-            Margin = new Padding(0, 5, 4, 0),
-            Text = "Select Month:",
-        };
-        RegisterLocalizedControl(monthLabel, "Select Month:", "ជ្រើសខែ");
-
         _autoCalendarMonthComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         _autoCalendarMonthComboBox.Font = _fontProvider.CreateBody(10F);
-        _autoCalendarMonthComboBox.Margin = new Padding(0, 2, 10, 0);
-        _autoCalendarMonthComboBox.Size = new Size(110, 28);
-        _autoCalendarMonthComboBox.Items.AddRange(AutomaticCalendarCalculator.GregorianMonthKhmerNames);
-        _autoCalendarMonthComboBox.SelectedIndex = today.Month - 1; // Current month
-        _autoCalendarMonthComboBox.SelectedIndexChanged += (_, _) => PopulateAutomaticCalendar();
-
-        var hintLabel = new Label
+        _autoCalendarMonthComboBox.Margin = new Padding(0, 4, 4, 0);
+        _autoCalendarMonthComboBox.Size = new Size(120, 28);
+        _autoCalendarMonthComboBox.Items.AddRange(GregorianMonthDisplayNames().Cast<object>().ToArray());
+        _autoCalendarMonthComboBox.SelectedIndex = today.Month - 1;
+        _autoCalendarMonthComboBox.SelectedIndexChanged += (_, _) =>
         {
-            AutoSize = true,
-            Font = _fontProvider.CreateBody(9F),
-            ForeColor = Color.FromArgb(90, 110, 90),
-            Margin = new Padding(0, 6, 12, 0),
-            Text = "▼ Click to switch month",
+            if (!_isRelocalizingChoices)
+            {
+                PopulateAutomaticCalendar();
+            }
         };
-        RegisterLocalizedControl(hintLabel, "▼ Click to switch month", "▼ ចុចដើម្បីប្តូរខែទាំង ១២");
 
-        _calculateAutoCalendarButton.AutoSize = true;
-        _calculateAutoCalendarButton.BackColor = BrandBlue;
-        _calculateAutoCalendarButton.FlatAppearance.BorderSize = 0;
-        _calculateAutoCalendarButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(28, 76, 128);
-        _calculateAutoCalendarButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(20, 56, 96);
-        _calculateAutoCalendarButton.FlatStyle = FlatStyle.Flat;
-        _calculateAutoCalendarButton.Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold);
-        _calculateAutoCalendarButton.ForeColor = Color.White;
-        _calculateAutoCalendarButton.Cursor = Cursors.Hand;
-        _calculateAutoCalendarButton.Margin = new Padding(0, 1, 0, 0);
-        _calculateAutoCalendarButton.Padding = new Padding(14, 5, 14, 5);
-        _calculateAutoCalendarButton.Text = "Calculate";
+        ConfigureAutomaticCalendarActionButton(_calculateAutoCalendarButton, "Calculate", "គណនា", primary: true);
         _calculateAutoCalendarButton.Click += (_, _) => PopulateAutomaticCalendar();
-        RegisterLocalizedControl(_calculateAutoCalendarButton, "Calculate", "គណនា");
-
-        _autoCalendarTodayButton.AutoSize = true;
-        _autoCalendarTodayButton.BackColor = Color.FromArgb(235, 244, 234);
-        _autoCalendarTodayButton.FlatAppearance.BorderSize = 0;
-        _autoCalendarTodayButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(215, 235, 214);
-        _autoCalendarTodayButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(195, 225, 194);
-        _autoCalendarTodayButton.FlatStyle = FlatStyle.Flat;
-        _autoCalendarTodayButton.Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold);
-        _autoCalendarTodayButton.ForeColor = Color.FromArgb(30, 90, 45);
-        _autoCalendarTodayButton.Cursor = Cursors.Hand;
-        _autoCalendarTodayButton.Margin = new Padding(6, 1, 0, 0);
-        _autoCalendarTodayButton.Padding = new Padding(14, 5, 14, 5);
-        _autoCalendarTodayButton.Text = "Today";
+        ConfigureAutomaticCalendarActionButton(_autoCalendarTodayButton, "Today", "ថ្ងៃនេះ", primary: false);
         _autoCalendarTodayButton.Click += (_, _) =>
         {
             var now = DateTime.Today;
             _autoCalendarYearTextBox.Text = now.Year.ToString(CultureInfo.InvariantCulture);
-            _autoCalendarMonthComboBox.SelectedIndex = now.Month - 1;
+            SelectAutomaticCalendarMonth(now.Month);
             PopulateAutomaticCalendar();
         };
-        RegisterLocalizedControl(_autoCalendarTodayButton, "Today", "ថ្ងៃនេះ");
 
-        bar.Controls.Add(yearLabel);
+        _autoCalendarKsTextBox.BackColor = Color.White;
+        _autoCalendarKsTextBox.Font = _fontProvider.CreateBody(10F, FontStyle.Bold);
+        _autoCalendarKsTextBox.ForeColor = Color.FromArgb(30, 90, 45);
+        _autoCalendarKsTextBox.Margin = new Padding(0, 4, 14, 0);
+        _autoCalendarKsTextBox.ReadOnly = true;
+        _autoCalendarKsTextBox.Size = new Size(75, 28);
+        _autoCalendarKsTextBox.TabStop = false;
+        _autoCalendarKsTextBox.TextAlign = HorizontalAlignment.Center;
+
+        bar.Controls.Add(BarLabel("Year CE (+) / BCE (−):", "ឆ្នាំ គ.ស. (+) / មុន គ.ស. (−)"));
         bar.Controls.Add(_autoCalendarYearTextBox);
-        bar.Controls.Add(ksLabel);
-        bar.Controls.Add(_autoCalendarKsTextBox);
-        bar.Controls.Add(monthLabel);
+        bar.Controls.Add(BarLabel("Month:", "ខែ"));
+        bar.Controls.Add(NavButton("◀", "Previous month", -1));
         bar.Controls.Add(_autoCalendarMonthComboBox);
-        bar.Controls.Add(hintLabel);
-        bar.Controls.Add(_calculateAutoCalendarButton);
+        bar.Controls.Add(NavButton("▶", "Next month", 1));
         bar.Controls.Add(_autoCalendarTodayButton);
-        header.Controls.Add(bar, 0, 1);
-        root.Controls.Add(header, 0, 0);
+        bar.Controls.Add(_calculateAutoCalendarButton);
+        bar.Controls.Add(BarLabel("K.S. (Auto):", "ក.ស. (Auto)", leftMargin: 10));
+        bar.Controls.Add(_autoCalendarKsTextBox);
+        ConfigureSegmentButton(_autoCalendarCompactButton, "Compact");
+        RegisterLocalizedControl(_autoCalendarCompactButton, "Compact", "សង្ខេប");
+        _autoCalendarCompactButton.Margin = new Padding(0);
+        _autoCalendarCompactButton.Click += (_, _) => SetAutomaticCalendarCompact(true);
+        ConfigureSegmentButton(_autoCalendarAllColumnsButton, "All 17");
+        RegisterLocalizedControl(_autoCalendarAllColumnsButton, "All 17", "ទាំង ១៧");
+        _toolTip.SetToolTip(_autoCalendarAllColumnsButton, "Show all 17 columns of workbook sheet 30 / បង្ហាញជួរឈរទាំង ១៧ នៃសន្លឹកទី ៣០");
+        _autoCalendarAllColumnsButton.Margin = new Padding(0);
+        _autoCalendarAllColumnsButton.Click += (_, _) => SetAutomaticCalendarCompact(false);
+        root.Controls.Add(bar, 0, 1);
+
+        root.Controls.Add(BuildAutomaticCalendarSummaryCard(), 0, 2);
 
         ConfigureGrid(_autoCalendarGrid);
         _autoCalendarGrid.AllowUserToResizeColumns = true;
@@ -1126,6 +1368,8 @@ public sealed class MainForm : Form
         _autoCalendarGrid.ColumnHeadersDefaultCellStyle.Padding = new Padding(4, 2, 4, 2);
         _autoCalendarGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(235, 244, 234);
         _autoCalendarGrid.ColumnHeadersDefaultCellStyle.ForeColor = TextPrimary;
+        _autoCalendarGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(235, 244, 234);
+        _autoCalendarGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = TextPrimary;
         _autoCalendarGrid.EnableHeadersVisualStyles = false;
         _autoCalendarGrid.ShowCellToolTips = true;
 
@@ -1147,19 +1391,179 @@ public sealed class MainForm : Form
         AddLocalizedColumn(_autoCalendarGrid, "samvatsara", "Samvatsara Name", "ឈ្មោះសំវត្សរ៍");
         AddLocalizedColumn(_autoCalendarGrid, "meaning", "Meaning", "អត្ថន័យ");
 
-        int[] widths = [65, 115, 55, 85, 70, 70, 70, 70, 70, 115, 125, 135, 90, 130, 65, 145];
+        int[] widths = [65, 115, 55, 110, 70, 70, 70, 70, 70, 115, 125, 135, 90, 130, 65, 145];
         for (var i = 0; i < widths.Length; i++)
         {
             _autoCalendarGrid.Columns[i].MinimumWidth = widths[i];
             _autoCalendarGrid.Columns[i].Width = widths[i];
             _autoCalendarGrid.Columns[i].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _autoCalendarGrid.Columns[i].SortMode = DataGridViewColumnSortMode.NotSortable;
         }
         _autoCalendarGrid.Columns[16].MinimumWidth = 260;
         _autoCalendarGrid.Columns[16].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         _autoCalendarGrid.Columns[16].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+        _autoCalendarGrid.Columns[16].SortMode = DataGridViewColumnSortMode.NotSortable;
 
-        root.Controls.Add(_autoCalendarGrid, 0, 1);
+        // The grid cannot scroll before it is on screen; reveal today's row once it is.
+        _autoCalendarGrid.VisibleChanged += (_, _) => RevealPendingAutomaticCalendarRow();
+        _autoCalendarGrid.SizeChanged += (_, _) => RevealPendingAutomaticCalendarRow();
+
+        root.Controls.Add(_autoCalendarGrid, 0, 3);
+        SetAutomaticCalendarCompact(true);
         return root;
+    }
+
+    private Control BuildAutomaticCalendarSummaryCard()
+    {
+        var card = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.FromArgb(248, 250, 253),
+            ColumnCount = 1,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 8),
+            Padding = new Padding(12, 8, 12, 8),
+            RowCount = 2,
+        };
+        card.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        card.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        card.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        card.Paint += (_, eventArgs) =>
+        {
+            using var pen = new Pen(Border);
+            eventArgs.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+        };
+
+        _autoCalendarSummaryLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        _autoCalendarSummaryLabel.AutoSize = true;
+        _autoCalendarSummaryLabel.Font = _fontProvider.CreateBody(9.5F);
+        _autoCalendarSummaryLabel.ForeColor = TextPrimary;
+        _autoCalendarSummaryLabel.Margin = new Padding(0, 0, 0, 6);
+        card.Controls.Add(_autoCalendarSummaryLabel, 0, 0);
+
+        var legend = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = Color.Transparent,
+            Margin = new Padding(0),
+            WrapContents = true,
+        };
+        foreach (var (color, english, khmer) in new[]
+                 {
+                     (AutoCalendarTodayColor, "Today", "ថ្ងៃនេះ"),
+                     (AutoCalendarFullMoonColor, "Full moon (ពេញបូណ៌មី)", "ពេញបូណ៌មី"),
+                     (AutoCalendarNewMoonColor, "New moon (អមាវសី)", "អមាវសី"),
+                 })
+        {
+            legend.Controls.Add(new Panel
+            {
+                BackColor = color,
+                BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(0, 5, 6, 0),
+                Size = new Size(16, 16),
+            });
+            var label = new Label
+            {
+                AutoSize = true,
+                Font = _fontProvider.CreateBody(8.5F),
+                ForeColor = TextSecondary,
+                Margin = new Padding(0, 4, 18, 0),
+                Text = english,
+            };
+            RegisterLocalizedControl(label, english, khmer);
+            legend.Controls.Add(label);
+        }
+
+        // Column view switch sits with the table it controls.
+        var columnsLabel = new Label
+        {
+            AutoSize = true,
+            Font = _fontProvider.CreateBody(8.5F, FontStyle.Bold),
+            ForeColor = TextSecondary,
+            Margin = new Padding(24, 4, 6, 0),
+            Text = "Columns:",
+        };
+        RegisterLocalizedControl(columnsLabel, "Columns:", "ជួរឈរ៖");
+        legend.Controls.Add(columnsLabel);
+        legend.Controls.Add(_autoCalendarCompactButton);
+        legend.Controls.Add(_autoCalendarAllColumnsButton);
+        card.Controls.Add(legend, 0, 1);
+        return card;
+    }
+
+    private void ConfigureAutomaticCalendarActionButton(Button button, string english, string khmer, bool primary)
+    {
+        button.AutoSize = true;
+        button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        button.BackColor = primary ? BrandBlue : Color.FromArgb(235, 244, 234);
+        button.Cursor = Cursors.Hand;
+        button.FlatAppearance.BorderSize = primary ? 0 : 1;
+        button.FlatAppearance.BorderColor = Color.FromArgb(150, 190, 150);
+        button.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(28, 76, 128) : Color.FromArgb(215, 235, 214);
+        button.FlatStyle = FlatStyle.Flat;
+        button.Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold);
+        button.ForeColor = primary ? Color.White : Color.FromArgb(30, 90, 45);
+        button.Margin = new Padding(6, 2, 0, 2);
+        button.MinimumSize = new Size(0, 32);
+        button.Padding = new Padding(12, 0, 12, 0);
+        button.Text = english;
+        button.UseVisualStyleBackColor = false;
+        RegisterLocalizedControl(button, english, khmer);
+    }
+
+    private string[] GregorianMonthDisplayNames() => IsKhmer
+        ? AutomaticCalendarCalculator.GregorianMonthKhmerNames
+        : CultureInfo.InvariantCulture.DateTimeFormat.MonthNames.Take(12).ToArray();
+
+    private void SelectAutomaticCalendarMonth(int month)
+    {
+        _isRelocalizingChoices = true;
+        try
+        {
+            _autoCalendarMonthComboBox.SelectedIndex = month - 1;
+        }
+        finally
+        {
+            _isRelocalizingChoices = false;
+        }
+    }
+
+    private void StepAutomaticCalendarMonth(int delta)
+    {
+        if (!KhmerCalendarCalculator.TryParseYear(_autoCalendarYearTextBox.Text.Trim(), out var year) || year == 0)
+        {
+            PopulateAutomaticCalendar(); // shows the validation error
+            return;
+        }
+
+        var (newYear, newMonth) = AutomaticCalendarMonthSummary.StepMonth(
+            year,
+            Math.Max(1, _autoCalendarMonthComboBox.SelectedIndex + 1),
+            delta);
+        _autoCalendarYearTextBox.Text = newYear.ToString(CultureInfo.InvariantCulture);
+        SelectAutomaticCalendarMonth(newMonth);
+        PopulateAutomaticCalendar();
+    }
+
+    private void SetAutomaticCalendarCompact(bool compact)
+    {
+        foreach (DataGridViewColumn column in _autoCalendarGrid.Columns)
+        {
+            column.Visible = !compact || AutomaticCalendarCompactColumns.Contains(column.Name);
+        }
+        _autoCalendarGrid.Columns["meaning"]!.AutoSizeMode = compact
+            ? DataGridViewAutoSizeColumnMode.NotSet
+            : DataGridViewAutoSizeColumnMode.Fill;
+        _autoCalendarGrid.Columns["lunarMonth"]!.AutoSizeMode = compact
+            ? DataGridViewAutoSizeColumnMode.Fill
+            : DataGridViewAutoSizeColumnMode.NotSet;
+        _autoCalendarGrid.Columns["lunarMonth"]!.DefaultCellStyle.Alignment = compact
+            ? DataGridViewContentAlignment.MiddleLeft
+            : DataGridViewContentAlignment.MiddleCenter;
+        ApplySegmentState(_autoCalendarCompactButton, compact);
+        ApplySegmentState(_autoCalendarAllColumnsButton, !compact);
     }
 
     private void PopulateAutomaticCalendar()
@@ -1168,6 +1572,7 @@ public sealed class MainForm : Form
         if (!KhmerCalendarCalculator.TryParseYear(yearText, out var parsedYear) || parsedYear == 0)
         {
             _autoCalendarKsTextBox.Text = "-";
+            _autoCalendarSummaryLabel.Text = string.Empty;
             _errorProvider.SetError(_autoCalendarYearTextBox, Localize("Invalid year. Enter CE or BCE year.", "ឆ្នាំមិនត្រឹមត្រូវ។ សូមបញ្ចូលឆ្នាំ គ.ស. ឬ មុន គ.ស."));
             return;
         }
@@ -1180,61 +1585,136 @@ public sealed class MainForm : Form
             selectedMonth = today.Month;
         }
 
+        AutomaticCalendarMonthResult result;
         try
         {
-            var result = _automaticCalendarCalculator.CalculateMonth(parsedYear, selectedMonth);
-            _autoCalendarKsTextBox.Text = result.KromSakarajAuto.ToString(CultureInfo.InvariantCulture);
-
-            _autoCalendarGrid.Rows.Clear();
-            var isCurrentMonth = parsedYear == today.Year && selectedMonth == today.Month;
-            var todayRowIdx = -1;
-
-            foreach (var row in result.Days)
-            {
-                var rowIdx = _autoCalendarGrid.Rows.Add(
-                    row.DayNumber,
-                    row.Weekday,
-                    row.Day,
-                    row.MonthName,
-                    row.CeYear,
-                    row.BuddhistYear,
-                    row.MahaSakaraj,
-                    row.ChulaSakaraj,
-                    row.KromSakaraj,
-                    row.LunarDay,
-                    row.TithiName,
-                    row.LunarMonth,
-                    row.AnimalYear,
-                    row.SesaKalaYoga,
-                    row.Yuga,
-                    row.SamvatsaraName,
-                    row.Meaning);
-
-                if (isCurrentMonth && row.Day == today.Day)
-                {
-                    todayRowIdx = rowIdx;
-                    var gridRow = _autoCalendarGrid.Rows[rowIdx];
-                    gridRow.DefaultCellStyle.BackColor = Color.FromArgb(255, 246, 214);
-                    gridRow.DefaultCellStyle.Font = _fontProvider.CreateBody(9.5F, FontStyle.Bold);
-                }
-            }
-
-            if (todayRowIdx >= 0)
-            {
-                _autoCalendarGrid.ClearSelection();
-                _autoCalendarGrid.Rows[todayRowIdx].Selected = true;
-                _autoCalendarGrid.FirstDisplayedScrollingRowIndex = Math.Max(0, todayRowIdx - 2);
-            }
-            else
-            {
-                _autoCalendarGrid.ClearSelection();
-            }
+            result = _automaticCalendarCalculator.CalculateMonth(parsedYear, selectedMonth);
         }
         catch (Exception ex)
         {
             _autoCalendarKsTextBox.Text = "-";
+            _autoCalendarSummaryLabel.Text = string.Empty;
+            _autoCalendarGrid.Rows.Clear();
+            _errorProvider.SetError(_autoCalendarYearTextBox, Localize(
+                "The calendar could not be calculated for this year.",
+                "មិនអាចគណនាប្រតិទិនសម្រាប់ឆ្នាំនេះបានទេ។"));
             Trace.WriteLine($"Error calculating automatic calendar: {ex.Message}");
+            return;
         }
+
+        _autoCalendarKsTextBox.Text = IsKhmer
+            ? ToKhmerDigits(result.KromSakarajAuto)
+            : result.KromSakarajAuto.ToString(CultureInfo.InvariantCulture);
+        var summary = AutomaticCalendarMonthSummary.From(result);
+        _autoCalendarSummaryLabel.Text = FormatAutomaticCalendarSummary(result, summary);
+
+        var isCurrentMonth = parsedYear == today.Year && selectedMonth == today.Month;
+        var monthName = GregorianMonthDisplayNames()[selectedMonth - 1];
+        _autoCalendarBoldFont ??= _fontProvider.CreateBody(9.5F, FontStyle.Bold);
+        _autoCalendarGrid.SuspendLayout();
+        _autoCalendarGrid.Rows.Clear();
+        var todayRowIndex = -1;
+        foreach (var row in result.Days)
+        {
+            var rowIndex = _autoCalendarGrid.Rows.Add(
+                row.DayNumber,
+                LocalizeKhmerWeekday(row.Weekday),
+                row.Day,
+                monthName,
+                row.CeYear,
+                row.BuddhistYear,
+                row.MahaSakaraj,
+                row.ChulaSakaraj,
+                row.KromSakaraj,
+                row.LunarDay,
+                row.TithiName,
+                row.LunarMonth,
+                row.AnimalYear,
+                row.SesaKalaYoga,
+                row.Yuga,
+                row.SamvatsaraName,
+                row.Meaning);
+
+            var gridRow = _autoCalendarGrid.Rows[rowIndex];
+            gridRow.Cells["meaning"].ToolTipText = row.Meaning;
+            if (row.TithiName == AutomaticCalendarMonthSummary.FullMoonTithi)
+            {
+                gridRow.DefaultCellStyle.BackColor = AutoCalendarFullMoonColor;
+            }
+            else if (row.TithiName == AutomaticCalendarMonthSummary.NewMoonTithi)
+            {
+                gridRow.DefaultCellStyle.BackColor = AutoCalendarNewMoonColor;
+            }
+
+            if (isCurrentMonth && row.Day == today.Day)
+            {
+                todayRowIndex = rowIndex;
+                gridRow.DefaultCellStyle.BackColor = AutoCalendarTodayColor;
+                gridRow.DefaultCellStyle.Font = _autoCalendarBoldFont;
+            }
+        }
+        _autoCalendarGrid.ResumeLayout();
+
+        _autoCalendarGrid.ClearSelection();
+        _autoCalendarPendingRevealRow = Math.Max(0, todayRowIndex - 2);
+        RevealPendingAutomaticCalendarRow();
+    }
+
+    private void RevealPendingAutomaticCalendarRow()
+    {
+        if (_autoCalendarPendingRevealRow is not int rowIndex
+            || !_autoCalendarGrid.Visible
+            || _autoCalendarGrid.DisplayedRowCount(includePartialRow: true) == 0
+            || rowIndex >= _autoCalendarGrid.Rows.Count)
+        {
+            return;
+        }
+
+        _autoCalendarPendingRevealRow = null;
+        _autoCalendarGrid.FirstDisplayedScrollingRowIndex = rowIndex;
+    }
+
+    private string FormatAutomaticCalendarSummary(AutomaticCalendarMonthResult month, AutomaticCalendarMonthSummary summary)
+    {
+        string Number(int value) => IsKhmer ? ToKhmerDigits(value) : value.ToString(CultureInfo.InvariantCulture);
+        string Span<T>(MonthValueSpan<T> span, Func<T, string> format) =>
+            span.Changes ? $"{format(span.First)} → {format(span.Last)}" : format(span.First);
+        string Days(IReadOnlyList<int> days) => days.Count == 0 ? "—" : string.Join(", ", days.Select(Number));
+
+        var monthName = GregorianMonthDisplayNames()[month.MonthIndex - 1];
+        var yearText = month.CeOrBceYear < 0
+            ? $"{Number(-month.CeOrBceYear)} {Localize("BCE", "មុន គ.ស.")}"
+            : $"{Number(month.CeOrBceYear)} {Localize("CE", "គ.ស.")}";
+        var eras =
+            $"{Localize("BE", "ព.ស.")} {Span(summary.BuddhistYear, Number)}   ·   " +
+            $"{Localize("MS", "ម.ស.")} {Span(summary.MahaSakaraj, Number)}   ·   " +
+            $"{Localize("CS", "ច.ស.")} {Span(summary.ChulaSakaraj, Number)}   ·   " +
+            $"{Localize("KS", "ក.ស.")} {Span(summary.KromSakaraj, Number)}   ·   " +
+            $"{Localize("Animal year", "ឆ្នាំ")} {Span(summary.AnimalYear, value => value)}";
+        var yearChange = summary.YearChangeDay is int changeDay
+            ? "\r\n" + Localize(
+                $"Khmer New Year: year values change from day {Number(changeDay)} of this month.",
+                $"ឆ្នាំថ្មីខ្មែរ៖ តម្លៃឆ្នាំប្តូរចាប់ពីថ្ងៃទី {Number(changeDay)} នៃខែនេះ។")
+            : string.Empty;
+        var samvatsara =
+            $"{Localize("Sesa-Kala-Yoga", "សេសកាលយោគ")} {Span(summary.SesaKalaYoga, Number)}   ·   " +
+            $"{Localize("Yuga", "យុគ")} {Span(summary.Yuga, Number)}   ·   " +
+            $"{Localize("Samvatsara", "សំវត្សរ៍")} {Span(summary.SamvatsaraName, value => value)} — {Span(summary.SamvatsaraMeaning, value => value)}";
+        var moons =
+            $"{Localize("Full moon", "ពេញបូណ៌មី")}: {Days(summary.FullMoonDays)}   ·   " +
+            $"{Localize("New moon", "អមាវសី")}: {Days(summary.NewMoonDays)}";
+        return $"{monthName} {yearText}\r\n{eras}{yearChange}\r\n{samvatsara}\r\n{moons}";
+    }
+
+    private string LocalizeKhmerWeekday(string khmerWeekday)
+    {
+        if (IsKhmer)
+        {
+            return khmerWeekday;
+        }
+
+        var index = Array.IndexOf(KhmerWeekdayNames, khmerWeekday);
+        return index >= 0 ? CultureInfo.InvariantCulture.DateTimeFormat.DayNames[index] : khmerWeekday;
     }
 
     private Control BuildSearchDatePanel()
@@ -2493,6 +2973,13 @@ public sealed class MainForm : Form
     // receives keyboard focus, which silently switched the language at start-up.
     private void ConfigureLanguageButton(Button button, string text, bool isKhmer)
     {
+        ConfigureSegmentButton(button, text);
+        button.AccessibleName = isKhmer ? "Khmer language" : "English language";
+        button.Click += (_, _) => SetLanguage(isKhmer);
+    }
+
+    private void ConfigureSegmentButton(Button button, string text)
+    {
         button.AutoSize = true;
         button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
         button.Cursor = Cursors.Hand;
@@ -2505,20 +2992,21 @@ public sealed class MainForm : Form
         button.Text = text;
         button.TextAlign = ContentAlignment.MiddleCenter;
         button.UseVisualStyleBackColor = false;
-        button.AccessibleName = isKhmer ? "Khmer language" : "English language";
-        button.Click += (_, _) => SetLanguage(isKhmer);
+        ApplySegmentState(button, selected: false);
+    }
+
+    private static void ApplySegmentState(Button button, bool selected)
+    {
+        button.BackColor = selected ? BrandBlue : Surface;
+        button.ForeColor = selected ? Color.White : TextPrimary;
+        button.FlatAppearance.MouseOverBackColor = selected ? BrandBlue : BrandBlueLight;
+        button.AccessibleDescription = selected ? "Selected" : null;
     }
 
     private void UpdateLanguageButtons()
     {
-        foreach (var (button, isKhmer) in new[] { (_englishLanguageButton, false), (_khmerLanguageButton, true) })
-        {
-            var selected = _isKhmer == isKhmer;
-            button.BackColor = selected ? BrandBlue : Surface;
-            button.ForeColor = selected ? Color.White : TextPrimary;
-            button.FlatAppearance.MouseOverBackColor = selected ? BrandBlue : BrandBlueLight;
-            button.AccessibleDescription = selected ? "Selected" : null;
-        }
+        ApplySegmentState(_englishLanguageButton, !_isKhmer);
+        ApplySegmentState(_khmerLanguageButton, _isKhmer);
     }
 
     private void SetLanguage(bool isKhmer)
@@ -2587,6 +3075,7 @@ public sealed class MainForm : Form
         _d1Chart.IsKhmer = khmer;
         _d3Chart.IsKhmer = khmer;
         _d9Chart.IsKhmer = khmer;
+        UpdateChartLegend();
 
         RelocalizeChoiceComboBox(_genderComboBox, GenderChoices);
         RelocalizeChoiceComboBox(_countryComboBox, CountryChoices);
@@ -2603,8 +3092,33 @@ public sealed class MainForm : Form
                 PopulateAtthabhujjGrid(_lastCalendarResult);
             }
         }
+        RelocalizeAutomaticCalendarMonths();
+        PopulateAutomaticCalendar();
         PopulateSearchDate();
         UpdateMasterBridgeLabels();
+    }
+
+    private void RelocalizeAutomaticCalendarMonths()
+    {
+        if (_autoCalendarMonthComboBox.Items.Count == 0)
+        {
+            return;
+        }
+
+        var selectedIndex = _autoCalendarMonthComboBox.SelectedIndex;
+        _isRelocalizingChoices = true;
+        _autoCalendarMonthComboBox.BeginUpdate();
+        try
+        {
+            _autoCalendarMonthComboBox.Items.Clear();
+            _autoCalendarMonthComboBox.Items.AddRange(GregorianMonthDisplayNames().Cast<object>().ToArray());
+            _autoCalendarMonthComboBox.SelectedIndex = selectedIndex;
+        }
+        finally
+        {
+            _autoCalendarMonthComboBox.EndUpdate();
+            _isRelocalizingChoices = false;
+        }
     }
 
     private void InitializeDefaultAtthabhujj()
@@ -2882,6 +3396,7 @@ public sealed class MainForm : Form
         _d1Chart.Chart = result.D1;
         _d3Chart.Chart = result.D3;
         _d9Chart.Chart = result.D9;
+        PopulateDivisionalTable();
         PopulateNakshatraGrid(result);
         PopulateCalendarGrid(calendar);
         PopulateAtthabhujjGrid(calendar);
@@ -3308,39 +3823,7 @@ public sealed class MainForm : Form
         return header + string.Join("\r\n\r\n", entries);
     }
 
-    private string GetBodyDisplayName(CelestialBody body) => IsKhmer
-        ? body switch
-        {
-            CelestialBody.Ascendant => "លគ្នា",
-            CelestialBody.Sun => "ព្រះអាទិត្យ",
-            CelestialBody.Moon => "ព្រះចន្ទ",
-            CelestialBody.Mars => "ព្រះអង្គារ",
-            CelestialBody.Mercury => "ព្រះពុធ",
-            CelestialBody.Jupiter => "ព្រះព្រហស្បតិ៍",
-            CelestialBody.Venus => "ព្រះសុក្រ",
-            CelestialBody.Saturn => "ព្រះសៅរ៍",
-            CelestialBody.Rahu => "រាហូ",
-            CelestialBody.Ketu => "ព្រះកេតុ",
-            CelestialBody.KetuVeda => "ព្រះកេតុវេទ",
-            CelestialBody.KetuDivya => "ព្រះកេតុទិព្វ",
-            CelestialBody.Uranus or CelestialBody.Mrityu => "ម្រឹត្យូវ (Uranus)",
-            CelestialBody.Neptune or CelestialBody.Varuna => "ព្រះវរុណ (Neptune)",
-            CelestialBody.Pluto or CelestialBody.Yama => "ព្រះយម (Pluto)",
-            _ => body.ToString(),
-        }
-        : body switch
-        {
-            CelestialBody.Ascendant => "Lagna (Ascendant)",
-            CelestialBody.KetuVeda => "Ketu Veda",
-            CelestialBody.KetuDivya => "Ketu Divya",
-            CelestialBody.Uranus => "Uranus (Mrityu)",
-            CelestialBody.Neptune => "Neptune (Varuna)",
-            CelestialBody.Pluto => "Pluto (Yama)",
-            CelestialBody.Mrityu => "Mrityu (Uranus)",
-            CelestialBody.Varuna => "Varuna (Neptune)",
-            CelestialBody.Yama => "Yama (Pluto)",
-            _ => body.ToString(),
-        };
+    private string GetBodyDisplayName(CelestialBody body) => CelestialBodyNames.Get(body, IsKhmer);
 
     private void RegisterLocalizedControl(Control control, string english, string khmer)
     {
