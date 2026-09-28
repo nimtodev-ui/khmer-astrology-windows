@@ -27,7 +27,8 @@ public sealed record AutomaticCalendarMonthSummary(
     MonthValueSpan<string> SamvatsaraMeaning,
     IReadOnlyList<int> FullMoonDays,
     IReadOnlyList<int> NewMoonDays,
-    int? YearChangeDay)
+    int? YearChangeDay,
+    IReadOnlyList<int> HolyDays)
 {
     public const string FullMoonTithi = "ពេញបូណ៌មី";
     public const string NewMoonTithi = "អមាវសី";
@@ -55,7 +56,8 @@ public sealed record AutomaticCalendarMonthSummary(
             Span(day => day.Meaning),
             month.Days.Where(day => day.TithiName == FullMoonTithi).Select(day => day.Day).ToArray(),
             month.Days.Where(day => day.TithiName == NewMoonTithi).Select(day => day.Day).ToArray(),
-            month.Days.FirstOrDefault(day => day.BuddhistYear != month.Days[0].BuddhistYear)?.Day);
+            month.Days.FirstOrDefault(day => day.BuddhistYear != month.Days[0].BuddhistYear)?.Day,
+            month.Days.Where(day => day.IsHolyDay).Select(day => day.Day).ToArray());
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ using KhmerAstrology.Infrastructure.ReferenceData;
 
 namespace KhmerAstrology.WinForms;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private static readonly Color PageBackground = Color.FromArgb(245, 247, 250);
     private static readonly Color Surface = Color.White;
@@ -68,11 +68,12 @@ public sealed class MainForm : Form
     private static readonly Color AutoCalendarTodayColor = Color.FromArgb(255, 238, 186);
     private static readonly Color AutoCalendarFullMoonColor = Color.FromArgb(255, 250, 228);
     private static readonly Color AutoCalendarNewMoonColor = Color.FromArgb(232, 236, 244);
+    private static readonly Color AutoCalendarHolyDayColor = Color.FromArgb(234, 246, 236);
 
     // Sheet 30 columns shown in the compact view; the rest repeat per month and
     // are summarised in the card above the grid.
     private static readonly HashSet<string> AutomaticCalendarCompactColumns =
-        ["no", "weekday", "day", "lunarDay", "tithiName", "lunarMonth"];
+        ["no", "weekday", "day", "lunarDay", "tithiName", "holyDay", "lunarMonth"];
 
     // Sheet 30 weekday names (B6 CHOOSE order: Sunday first).
     private static readonly string[] KhmerWeekdayNames =
@@ -372,6 +373,9 @@ public sealed class MainForm : Form
         var autoCalendar = new TabPage("Automatic Calendar") { BackColor = Surface, Padding = new Padding(10) };
         _localizedTabs.Add((autoCalendar, "Automatic Calendar", "ប្រតិទិនស្វ័យប្រវត្តិ"));
         autoCalendar.Controls.Add(BuildAutomaticCalendarPanel());
+        var lunarCalendar = new TabPage("Lunar Calendar") { BackColor = Surface, Padding = new Padding(10) };
+        _localizedTabs.Add((lunarCalendar, "Lunar Calendar", "ប្រតិទិនចន្ទគតិ"));
+        lunarCalendar.Controls.Add(BuildLunarCalendarPanel());
         var searchDate = new TabPage("Search Date") { BackColor = Surface, Padding = new Padding(10) };
         _localizedTabs.Add((searchDate, "Search Date", "ស្វែងរក ថ្ងៃខែឆ្នាំ"));
         searchDate.Controls.Add(BuildSearchDatePanel());
@@ -388,6 +392,7 @@ public sealed class MainForm : Form
         _tabs.TabPages.Add(nakshatra);
         _tabs.TabPages.Add(calendar);
         _tabs.TabPages.Add(autoCalendar);
+        _tabs.TabPages.Add(lunarCalendar);
         _tabs.TabPages.Add(searchDate);
         _tabs.TabPages.Add(atthabhujj);
         _tabs.TabPages.Add(interpretation);
@@ -1308,7 +1313,8 @@ public sealed class MainForm : Form
             SetResultKeyCard(
                 "lunarDate",
                 $"{lunar.LunarDay}  {lunar.LunarMonth}",
-                $"{LocalizeKhmerWeekday(lunar.SolarWeekday)} • {Localize("Year", "ឆ្នាំ")} {lunar.AnimalYear} • {lunar.TithiName}");
+                $"{LocalizeKhmerWeekday(lunar.SolarWeekday)} • {Localize("Year", "ឆ្នាំ")} {lunar.AnimalYear} {SakName(lunar.ChulaSakaraj)} • {lunar.TithiName}" +
+                (lunar.IsHolyDay ? $" • {Localize("Holy day", "ថ្ងៃសីល")}" : string.Empty));
         }
         catch (Exception exception)
         {
@@ -1653,6 +1659,7 @@ public sealed class MainForm : Form
         AddLocalizedColumn(_autoCalendarGrid, "yuga", "Yuga", "យុគ");
         AddLocalizedColumn(_autoCalendarGrid, "samvatsara", "Samvatsara Name", "ឈ្មោះសំវត្សរ៍");
         AddLocalizedColumn(_autoCalendarGrid, "meaning", "Meaning", "អត្ថន័យ");
+        AddLocalizedColumn(_autoCalendarGrid, "holyDay", "Holy day", "ថ្ងៃសីល");
 
         int[] widths = [65, 115, 55, 110, 70, 70, 70, 70, 70, 115, 125, 135, 90, 130, 65, 145];
         for (var i = 0; i < widths.Length; i++)
@@ -1666,6 +1673,13 @@ public sealed class MainForm : Form
         _autoCalendarGrid.Columns[16].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         _autoCalendarGrid.Columns[16].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
         _autoCalendarGrid.Columns[16].SortMode = DataGridViewColumnSortMode.NotSortable;
+        var holyDayColumn = _autoCalendarGrid.Columns["holyDay"]!;
+        holyDayColumn.MinimumWidth = 90;
+        holyDayColumn.Width = 100;
+        holyDayColumn.SortMode = DataGridViewColumnSortMode.NotSortable;
+        holyDayColumn.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+        holyDayColumn.DefaultCellStyle.ForeColor = Color.FromArgb(30, 110, 60);
+        holyDayColumn.DisplayIndex = _autoCalendarGrid.Columns["tithiName"]!.DisplayIndex + 1;
 
         // The grid cannot scroll before it is on screen; reveal today's row once it is.
         _autoCalendarGrid.VisibleChanged += (_, _) => RevealPendingAutomaticCalendarRow();
@@ -1718,6 +1732,7 @@ public sealed class MainForm : Form
                      (AutoCalendarTodayColor, "Today", "ថ្ងៃនេះ"),
                      (AutoCalendarFullMoonColor, "Full moon (ពេញបូណ៌មី)", "ពេញបូណ៌មី"),
                      (AutoCalendarNewMoonColor, "New moon (អមាវសី)", "អមាវសី"),
+                     (AutoCalendarHolyDayColor, "Holy day (ថ្ងៃសីល)", "ថ្ងៃសីល"),
                  })
         {
             legend.Controls.Add(new Panel
@@ -1896,7 +1911,8 @@ public sealed class MainForm : Form
                 row.SesaKalaYoga,
                 row.Yuga,
                 row.SamvatsaraName,
-                row.Meaning);
+                row.Meaning,
+                HolyDayText(row.IsHolyDay));
 
             var gridRow = _autoCalendarGrid.Rows[rowIndex];
             gridRow.Cells["meaning"].ToolTipText = row.Meaning;
@@ -1907,6 +1923,10 @@ public sealed class MainForm : Form
             else if (row.TithiName == AutomaticCalendarMonthSummary.NewMoonTithi)
             {
                 gridRow.DefaultCellStyle.BackColor = AutoCalendarNewMoonColor;
+            }
+            else if (row.IsHolyDay)
+            {
+                gridRow.DefaultCellStyle.BackColor = AutoCalendarHolyDayColor;
             }
 
             if (isCurrentMonth && row.Day == today.Day)
@@ -1951,7 +1971,7 @@ public sealed class MainForm : Form
         var eras =
             $"{Localize("BE", "ព.ស.")} {Span(summary.BuddhistYear, Number)}   ·   " +
             $"{Localize("MS", "ម.ស.")} {Span(summary.MahaSakaraj, Number)}   ·   " +
-            $"{Localize("CS", "ច.ស.")} {Span(summary.ChulaSakaraj, Number)}   ·   " +
+            $"{Localize("CS", "ច.ស.")} {Span(summary.ChulaSakaraj, Number)} ({Span(summary.ChulaSakaraj, SakName)})   ·   " +
             $"{Localize("KS", "ក.ស.")} {Span(summary.KromSakaraj, Number)}   ·   " +
             $"{Localize("Animal year", "ឆ្នាំ")} {Span(summary.AnimalYear, value => value)}";
         var yearChange = summary.YearChangeDay is int changeDay
@@ -1965,9 +1985,15 @@ public sealed class MainForm : Form
             $"{Localize("Samvatsara", "សំវត្សរ៍")} {Span(summary.SamvatsaraName, value => value)} — {Span(summary.SamvatsaraMeaning, value => value)}";
         var moons =
             $"{Localize("Full moon", "ពេញបូណ៌មី")}: {Days(summary.FullMoonDays)}   ·   " +
-            $"{Localize("New moon", "អមាវសី")}: {Days(summary.NewMoonDays)}";
+            $"{Localize("New moon", "អមាវសី")}: {Days(summary.NewMoonDays)}   ·   " +
+            $"{Localize("Holy days", "ថ្ងៃសីល")}: {Days(summary.HolyDays)}";
         return $"{monthName} {yearText}\r\n{eras}{yearChange}\r\n{samvatsara}\r\n{moons}";
     }
+
+    // Standard Khmer calendar conventions (KhmerLunarCalendarRules), shown next to workbook values.
+    private string SakName(int chulaSakaraj) => KhmerLunarCalendarRules.GetSakName(chulaSakaraj, IsKhmer);
+
+    private string HolyDayText(bool isHolyDay) => isHolyDay ? Localize("Holy day", "ថ្ងៃសីល") : string.Empty;
 
     private string LocalizeKhmerWeekday(string khmerWeekday)
     {
@@ -2318,6 +2344,7 @@ public sealed class MainForm : Form
                 ("tithiName", "Tithi Name", "ឈ្មោះតិថី"),
                 ("lunarMonth", "Lunar Month", "ខែចន្ទគតិ"),
                 ("animalYear", "Animal Year", "ឆ្នាំនក្សត្រ"),
+                ("holyDay", "Holy day (ថ្ងៃសីល)", "ថ្ងៃសីល"),
             ]);
 
         var card3 = BuildSearchDateGroup(
@@ -2327,6 +2354,7 @@ public sealed class MainForm : Form
                 ("be", "Buddhist Era (BE)", "ព.ស."),
                 ("ms", "Maha Sakaraj (MS)", "ម.ស."),
                 ("cs", "Chula Sakaraj (CS)", "ច.ស."),
+                ("sak", "Sak", "ស័ក"),
                 ("ks", "Krom Sakaraj (KS)", "ក.ស."),
                 ("sesa", "Sesa-Kala-Yoga", "សេសកាលយោគ"),
             ]);
@@ -2367,7 +2395,7 @@ public sealed class MainForm : Form
 
         for (var index = 0; index < fields.Count; index++)
         {
-            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+            table.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / fields.Count));
             var field = fields[index];
             var fieldLabel = new Label
             {
@@ -2388,14 +2416,15 @@ public sealed class MainForm : Form
                 {
                     "solarFullDate" => Color.FromArgb(232, 241, 250),
                     "lunarDay" or "tithiName" => Color.FromArgb(255, 248, 218),
+                    "holyDay" => AutoCalendarHolyDayColor,
                     "be" or "ks" => Color.FromArgb(235, 247, 235),
                     _ => Color.White,
                 },
                 Dock = DockStyle.Fill,
                 Font = _fontProvider.CreateBody(10F, FontStyle.Bold),
                 ForeColor = TextPrimary,
-                Margin = new Padding(0, 2, 0, 2),
-                Padding = new Padding(8, 2, 8, 2),
+                Margin = new Padding(0, 1, 0, 1),
+                Padding = new Padding(8, 0, 8, 0),
                 Text = "—",
                 TextAlign = ContentAlignment.MiddleLeft,
             };
@@ -2512,6 +2541,7 @@ public sealed class MainForm : Form
             AddDataRow("Tithi Name", "ឈ្មោះតិថី", result.TithiName);
             AddDataRow("Lunar Month", "ខែចន្ទគតិ", result.LunarMonth);
             AddDataRow("Animal Year", "ឆ្នាំនក្សត្រ", result.AnimalYear);
+            AddDataRow("Holy day", "ថ្ងៃសីល", result.IsHolyDay ? Localize("Yes — Buddhist holy day", "ជាថ្ងៃសីល") : Localize("No", "មិនមែន"));
 
             AddSpacer();
 
@@ -2520,6 +2550,7 @@ public sealed class MainForm : Form
             AddDataRow("Buddhist Era (BE)", "ព.ស.", result.BuddhistYear);
             AddDataRow("Maha Sakaraj (MS)", "ម.ស.", result.MahaSakaraj);
             AddDataRow("Chula Sakaraj (CS)", "ច.ស.", result.ChulaSakaraj);
+            AddDataRow("Sak", "ស័ក", SakName(result.ChulaSakaraj));
             AddDataRow("Krom Sakaraj (KS)", "ក.ស.", result.KromSakaraj);
             AddDataRow("Sesa Kala Yoga", "សេសកាលយោគ", result.SesaKalaYoga);
 
@@ -2537,10 +2568,12 @@ public sealed class MainForm : Form
             SetSearchSummaryValue("tithiName", result.TithiName);
             SetSearchSummaryValue("lunarMonth", result.LunarMonth);
             SetSearchSummaryValue("animalYear", result.AnimalYear);
+            SetSearchSummaryValue("holyDay", result.IsHolyDay ? Localize("Holy day", "ថ្ងៃសីល") : "—");
 
             SetSearchSummaryValue("be", result.BuddhistYear.ToString(CultureInfo.InvariantCulture));
             SetSearchSummaryValue("ms", result.MahaSakaraj.ToString(CultureInfo.InvariantCulture));
             SetSearchSummaryValue("cs", result.ChulaSakaraj.ToString(CultureInfo.InvariantCulture));
+            SetSearchSummaryValue("sak", SakName(result.ChulaSakaraj));
             SetSearchSummaryValue("ks", result.KromSakaraj.ToString(CultureInfo.InvariantCulture));
             SetSearchSummaryValue("sesa", result.SesaKalaYoga.ToString(CultureInfo.InvariantCulture));
         }
@@ -3358,6 +3391,7 @@ public sealed class MainForm : Form
         RelocalizeAutomaticCalendarMonths();
         PopulateAutomaticCalendar();
         PopulateSearchDate();
+        ApplyLunarCalendarLanguage();
         UpdateMasterBridgeLabels();
     }
 
@@ -3953,11 +3987,13 @@ public sealed class MainForm : Form
         var lunarMonth = IsKhmer && lunar is not null ? lunar.LunarMonth : calendar.LunarMonthNameEn;
         var animal = IsKhmer && lunar is not null ? lunar.AnimalYear : calendar.AnimalYear;
         var tithi = IsKhmer && lunar is not null ? lunar.TithiName : calendar.TithiName;
+        var sak = SakName(lunar?.ChulaSakaraj ?? calendar.BuddhistYear - 1_182);
+        var holy = lunar?.IsHolyDay == true;
 
         _calendarHeadlineLabel.Text = hasDate
             ? Localize(
-                $"{weekday}, {lunarDay} of {lunarMonth}  •  Year of the {animal}  •  BE {calendar.BuddhistYear}",
-                $"ថ្ងៃ{weekday} {lunarDay} {lunarMonth}  •  ឆ្នាំ{animal}  •  ព.ស. {Number(calendar.BuddhistYear)}")
+                $"{weekday}, {lunarDay} of {lunarMonth}  •  Year of the {animal}, {sak}  •  BE {calendar.BuddhistYear}{(holy ? "  •  Holy day" : string.Empty)}",
+                $"ថ្ងៃ{weekday} {lunarDay} {lunarMonth}  •  ឆ្នាំ{animal} {sak}  •  ព.ស. {Number(calendar.BuddhistYear)}{(holy ? "  •  ថ្ងៃសីល" : string.Empty)}")
             : "—";
         _calendarSublineLabel.Text = input is null
             ? Localize("Calculate a horoscope to see the birth date in the Khmer calendar.", "សូមគណនាហោរាសាស្ត្រ ដើម្បីមើលថ្ងៃកំណើតតាមប្រតិទិនខ្មែរ។")
@@ -3974,6 +4010,8 @@ public sealed class MainForm : Form
             AddCalendarRow("Tithi", "ឈ្មោះតិថី", tithi);
             AddCalendarRow("Lunar month", "ខែចន្ទគតិ", $"{lunarMonth} ({Number(calendar.LunarMonthNumber)})");
             AddCalendarRow("Animal year", "ឆ្នាំសត្វ", animal);
+            AddCalendarRow("Sak", "ស័ក", sak);
+            AddCalendarRow("Holy day", "ថ្ងៃសីល", holy ? Localize("Yes — Buddhist holy day", "ជាថ្ងៃសីល") : Localize("No", "មិនមែន"));
             AddCalendarRow("Sesa-Kala-Yoga / Yuga", "សេសកាលយោគ / យុគ", $"{Number(calendar.SesaKalaYoga)} / {Number(calendar.Yuga)}");
         }
 

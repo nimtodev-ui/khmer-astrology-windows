@@ -20,4 +20,7 @@ public sealed record KhmerLunarState(
     public bool IsFullMoon => LunarDay == 15;
 
     public bool IsNewMoon => LunarDay is 29 or 30;
+
+    /// <summary>Buddhist holy day (ថ្ងៃសីល); see <see cref="KhmerLunarCalendarRules.IsHolyDay"/>.</summary>
+    public bool IsHolyDay => KhmerLunarCalendarRules.IsHolyDay(LunarDay, MonthLength);
 }

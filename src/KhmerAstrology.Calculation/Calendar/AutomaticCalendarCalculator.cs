@@ -215,7 +215,9 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
                 SesaKalaYoga: sesa,
                 Yuga: yuga,
                 SamvatsaraName: sam.Name,
-                Meaning: sam.Meaning));
+                Meaning: sam.Meaning,
+                LunarDayNumber: u,
+                LunarMonthLength: V[idx]));
         }
 
         return new AutomaticCalendarMonthResult(
@@ -345,7 +347,8 @@ public sealed class AutomaticCalendarCalculator : IAutomaticCalendarCalculator
             MahaSakaraj: dayRow.MahaSakaraj,
             ChulaSakaraj: dayRow.ChulaSakaraj,
             KromSakaraj: dayRow.KromSakaraj,
-            SesaKalaYoga: dayRow.SesaKalaYoga);
+            SesaKalaYoga: dayRow.SesaKalaYoga,
+            IsHolyDay: dayRow.IsHolyDay);
     }
 
     public static string ToKhmerNumerals(int number)

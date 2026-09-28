@@ -20,7 +20,20 @@ public sealed record AutomaticCalendarDayRow(
     int SesaKalaYoga,
     int Yuga,
     string SamvatsaraName,
-    string Meaning);
+    string Meaning,
+    int LunarDayNumber = 0,
+    int LunarMonthLength = 0)
+{
+    /// <summary>Buddhist holy day (ថ្ងៃសីល) from the day walk's lunar day and month length.</summary>
+    public bool IsHolyDay => KhmerLunarCalendarRules.IsHolyDay(LunarDayNumber, LunarMonthLength);
+
+    /// <summary>Moon phase marked on the standard calendar for this day.</summary>
+    public KhmerMoonPhase MoonPhase => KhmerLunarCalendarRules.GetMoonPhase(LunarDayNumber, LunarMonthLength);
+
+    /// <summary>Buddhist observance fixed by this lunar date, if any.</summary>
+    public KhmerLunarObservance? Observance =>
+        KhmerLunarCalendarRules.GetObservance(LunarMonth, LunarDayNumber, LunarMonthLength);
+}
 
 /// <summary>
 /// Full month calculation result for the Automatic Calendar tab.
@@ -57,4 +70,5 @@ public sealed record KhmerDateSearchResult(
     int MahaSakaraj,
     int ChulaSakaraj,
     int KromSakaraj,
-    int SesaKalaYoga);
+    int SesaKalaYoga,
+    bool IsHolyDay = false);
